@@ -1,6 +1,7 @@
 import { config } from './config.js';
 import { runTurn, textOf } from './anthropic.js';
 import { WATCHER_PROMPT } from './prompts.js';
+import { composePoke } from './voice.js';
 import { callGmailTool } from './tools/gmailMcp.js';
 import { sendPoke, subscriptionCount } from './push.js';
 import * as seen from './seen.js';
@@ -85,7 +86,15 @@ async function readBody(id: string): Promise<string> {
   }
 }
 
-type Decision = { decision: 'now' | 'morning' | 'ignore'; reason?: string; title?: string; body?: string };
+// The classifier decides AND extracts substance — it does NOT phrase the poke.
+// The orchestrator voice (composePoke) writes what the user reads.
+type Decision = {
+  decision: 'now' | 'morning' | 'ignore';
+  reason?: string;
+  from?: string;
+  summary?: string;
+  codes?: string;
+};
 
 async function classify(m: EmailMeta, body: string): Promise<Decision> {
   const system = WATCHER_PROMPT.replace('{{NOW}}', localNow()).replace('{{TZ}}', config.watchTz);
@@ -126,10 +135,25 @@ export async function tick(): Promise<TickResult> {
       if (d.decision === 'ignore') {
         seen.put(m.id, { status: 'ignored', decision: 'ignore', subject: m.subject, from: m.from, classifiedAt: Date.now() });
       } else {
+        // The orchestrator voice phrases the poke from the classifier's facts.
+        // If voicing fails, fall back to a plain poke so we still notify.
+        let poke: { title: string; body: string; url: string };
+        try {
+          const voiced = await composePoke({
+            from: d.from || m.from,
+            subject: m.subject,
+            summary: d.summary || m.subject,
+            codes: d.codes,
+          });
+          poke = { ...voiced, url: pokeUrl() };
+        } catch (e: any) {
+          errors.push(`voice ${m.id}: ${e?.message || e}`);
+          poke = { title: 'wabil', body: d.summary || m.subject, url: pokeUrl() };
+        }
         seen.put(m.id, {
           status: 'pending',
           decision: d.decision,
-          poke: { title: d.title || 'wabil', body: d.body || m.subject, url: pokeUrl() },
+          poke,
           subject: m.subject,
           from: m.from,
           classifiedAt: Date.now(),

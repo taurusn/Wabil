@@ -20,9 +20,13 @@ You are reached over a simple chat API, not iMessage. Your plain-text output is 
 
 export const EXECUTION_PROMPT = raw('execution.md');
 
-// The inbox-classifier prompt the watcher runs over each new email to decide
-// notify-now / hold-till-morning / ignore, and to compose the poke in voice.
-export const WATCHER_PROMPT = raw('watcher.md');
+// The pure Poke personality (no runtime/tool glue). This is the single source of
+// wabil's user-facing VOICE — chat replies come from ORCHESTRATOR_PROMPT, and
+// every proactive poke + the morning digest are written with this same voice so
+// there is exactly one wabil, not a second hand-authored one.
+export const VOICE_PROMPT = raw('orchestrator.xml');
 
-// The morning-digest prompt: turn a list of recent emails into a calm catch-up.
-export const DIGEST_PROMPT = raw('digest.md');
+// The inbox-classifier prompt: the watcher runs it over each new email to DECIDE
+// (now / morning / ignore) and EXTRACT the substance. It does NOT write the
+// user-facing poke — the orchestrator voice does that (see voice.ts).
+export const WATCHER_PROMPT = raw('watcher.md');

@@ -1,6 +1,5 @@
 import { config } from './config.js';
-import { runTurn, textOf } from './anthropic.js';
-import { DIGEST_PROMPT } from './prompts.js';
+import { composeDigest } from './voice.js';
 import { callGmailTool } from './tools/gmailMcp.js';
 import { parseSearch } from './watcher.js';
 
@@ -21,14 +20,8 @@ export async function buildDigest(force = false): Promise<Digest> {
   const raw = await callGmailTool('search_emails', { query: config.watchQuery, maxResults: config.watchMax });
   const emails = parseSearch(raw);
 
-  let text: string;
-  if (emails.length === 0) {
-    text = 'your inbox is quiet. nothing new worth a look.';
-  } else {
-    const list = emails.map((e) => `- ${e.from} — ${e.subject} (${e.date})`).join('\n');
-    const msg = await runTurn({ system: DIGEST_PROMPT, messages: [{ role: 'user', content: list }] });
-    text = textOf(msg) || 'could not put together a digest right now.';
-  }
+  // Written in the orchestrator's voice (see voice.ts), not a separate prompt.
+  const text = await composeDigest(emails);
 
   cache = { at: Date.now(), text, count: emails.length };
   return { generatedAt: cache.at, text, count: emails.length, cached: false };
