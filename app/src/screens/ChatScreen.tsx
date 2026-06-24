@@ -7,10 +7,11 @@ import { Orb } from '../components/Orb';
 import { AssistantProse, InputBar, Quoted, SessionDivider, ThinkingDots, UserBubble } from '../components/chat';
 import { color, font, space } from '../theme';
 import type { RootStackParamList } from '../types';
-import { getHistory, sanitize, sendChat, type ChatMsg } from '../api';
+import { getHistory, sanitize, sendChat, streamUrl, type ChatMsg, type StreamEvent } from '../api';
 
 const PAGE = 40;
 const GAP_MS = 5 * 60 * 60 * 1000;
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 type Row = ChatMsg | { id: string; role: 'thinking' };
@@ -35,11 +36,33 @@ export function ChatScreen({ navigation }: Props) {
   const [reachedStart, setReachedStart] = useState(false);
   const [ready, setReady] = useState(false);
   const sending = useRef(false);
+  const queue = useRef<ChatMsg[]>([]); // streamed bubbles waiting to be revealed
+  const draining = useRef(false);
 
-  // Defensive: clean any artifacts on display (the server sanitizes new replies,
-  // this also covers any older content).
   const clean = (list: ChatMsg[]) => list.map((m) => ({ ...m, content: sanitize(m.content) }));
 
+  // Add a message, deduped by id, kept in ts order.
+  const addMsg = useCallback((m: ChatMsg) => {
+    setMsgs((cur) => (cur.some((x) => x.id === m.id) ? cur : [...cur, m].sort((a, b) => a.ts - b.ts)));
+  }, []);
+
+  // Reveal streamed bubbles one at a time with a short typing delay, so a
+  // multi-bubble answer arrives like someone firing off several texts.
+  const drain = useCallback(async () => {
+    if (draining.current) return;
+    draining.current = true;
+    while (queue.current.length) {
+      setThinking(true);
+      const next = queue.current[0];
+      await sleep(Math.min(950, 380 + next.content.length * 7));
+      queue.current.shift();
+      addMsg({ ...next, content: sanitize(next.content) });
+      setThinking(queue.current.length > 0);
+    }
+    draining.current = false;
+  }, [addMsg]);
+
+  // Initial history.
   useEffect(() => {
     getHistory()
       .then((h) => {
@@ -49,6 +72,45 @@ export function ChatScreen({ navigation }: Props) {
       .catch(() => {})
       .finally(() => setReady(true));
   }, []);
+
+  // Live assistant stream (SSE). Web-only (the shipped app is the web build).
+  useEffect(() => {
+    const ES = (globalThis as any).EventSource;
+    if (!ES) return;
+    const es = new ES(streamUrl());
+    let first = true;
+    es.onmessage = (ev: any) => {
+      let e: StreamEvent;
+      try {
+        e = JSON.parse(ev.data);
+      } catch {
+        return;
+      }
+      if (e.type === 'typing') setThinking(true);
+      else if (e.type === 'bubble') {
+        queue.current.push(e.message);
+        drain();
+      }
+    };
+    es.onopen = () => {
+      // On reconnect, catch up on anything missed while disconnected.
+      if (first) {
+        first = false;
+        return;
+      }
+      getHistory()
+        .then((h) => {
+          setMsgs((cur) => {
+            const have = new Set(cur.map((m) => m.id));
+            const merged = [...cur, ...clean(h).filter((m) => !have.has(m.id))];
+            return merged.sort((a, b) => a.ts - b.ts);
+          });
+          if (queue.current.length === 0) setThinking(false);
+        })
+        .catch(() => {});
+    };
+    return () => es.close();
+  }, [drain]);
 
   const findById = useCallback((id?: string | null) => (id ? msgs.find((m) => m.id === id) : undefined), [msgs]);
 
@@ -70,6 +132,7 @@ export function ChatScreen({ navigation }: Props) {
     }
   }, [loadingMore, reachedStart, msgs]);
 
+  // Fire-and-forget: ACK updates the optimistic user bubble; replies stream in.
   const send = async (text: string) => {
     if (sending.current) return;
     sending.current = true;
@@ -87,13 +150,10 @@ export function ChatScreen({ navigation }: Props) {
     setMsgs((m) => [...m, optimistic]);
     setThinking(true);
     try {
-      const r = await sendChat(text, rTo?.id);
-      setMsgs((m) =>
-        m
-          .map((x) => (x.id === tempId ? { ...x, id: r.id, ts: r.ts, sessionId: r.sessionId } : x))
-          .concat({ id: r.replyId, role: 'assistant', content: sanitize(r.reply), ts: r.replyTs, sessionId: r.sessionId, replyToId: null }),
-      );
+      const ack = await sendChat(text, rTo?.id);
+      setMsgs((m) => m.map((x) => (x.id === tempId ? { ...x, id: ack.id, ts: ack.ts, sessionId: ack.sessionId } : x)));
     } catch {
+      setThinking(false);
       setMsgs((m) =>
         m.concat({
           id: `err-${Date.now()}`,
@@ -105,7 +165,6 @@ export function ChatScreen({ navigation }: Props) {
         }),
       );
     } finally {
-      setThinking(false);
       sending.current = false;
     }
   };
@@ -130,11 +189,7 @@ export function ChatScreen({ navigation }: Props) {
     const newSession = !!older && (older.sessionId !== m.sessionId || m.ts - older.ts > GAP_MS);
     const repliedTo = findById(m.replyToId);
     const quote = repliedTo ? (
-      <Quoted
-        align={m.role === 'user' ? 'right' : 'left'}
-        who={repliedTo.role === 'user' ? 'you' : 'wabil'}
-        text={repliedTo.content}
-      />
+      <Quoted align={m.role === 'user' ? 'right' : 'left'} who={repliedTo.role === 'user' ? 'you' : 'wabil'} text={repliedTo.content} />
     ) : null;
 
     return (

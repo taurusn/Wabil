@@ -2,9 +2,12 @@ import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { streamSSE } from 'hono/streaming';
 import { z } from 'zod';
 import { config } from './config.js';
 import { runOrchestrator, type ChatMessage } from './orchestrator.js';
+import * as runtime from './runtime.js';
+import * as bus from './bus.js';
 import {
   addSubscription,
   removeSubscription,
@@ -16,11 +19,11 @@ import {
 import { startWatcher, watcherStatus, tick } from './watcher.js';
 import { buildDigest, DIGEST_PAGE } from './digest.js';
 import * as store from './store.js';
-import { sanitize } from './sanitize.js';
 
 const app = new Hono();
 app.use('/health', cors());
 app.use('/chat', cors());
+app.use('/stream', cors());
 app.use('/history', cors());
 app.use('/vapidPublicKey', cors());
 app.use('/subscribe', cors());
@@ -45,34 +48,16 @@ app.post('/chat', async (c) => {
   }
   const body = (await c.req.json().catch(() => null)) as any;
 
-  // Stateful contract: { text, replyToId? }. The server persists the turn,
-  // assembles the session (+ reply excerpt), and persists the reply.
+  // Stateful, iterative contract: { text, replyToId? }. Persist the turn and
+  // hand it to the runtime; the reply (or replies) stream back over GET /stream,
+  // and fall back to a chat push if the app is closed. Returns immediately.
   if (body && typeof body.text === 'string') {
     const text = body.text.trim();
     if (!text) return c.json({ error: 'text is empty' }, 400);
     const replyToId = typeof body.replyToId === 'string' ? body.replyToId : null;
-    try {
-      const userMsg = store.addMessage({ role: 'user', content: text, replyToId });
-      const session = store.sessionMessages(userMsg.sessionId);
-      const messages = session.map((m) => ({ role: m.role, content: m.content }));
-      if (replyToId) {
-        const block = store.replyContextBlock(replyToId);
-        if (block) messages[messages.length - 1] = { role: 'user', content: `${block}\n\n${text}` };
-      }
-      const reply = sanitize(await runOrchestrator(messages as ChatMessage[]));
-      const asst = store.addMessage({ role: 'assistant', content: reply });
-      return c.json({
-        id: userMsg.id,
-        ts: userMsg.ts,
-        sessionId: userMsg.sessionId,
-        reply,
-        replyId: asst.id,
-        replyTs: asst.ts,
-      });
-    } catch (err: any) {
-      console.error('[chat] error:', err?.message || err);
-      return c.json({ error: err?.message || 'orchestrator failed' }, 500);
-    }
+    const userMsg = store.addMessage({ role: 'user', content: text, replyToId });
+    runtime.handleUserMessage(userMsg);
+    return c.json({ id: userMsg.id, ts: userMsg.ts, sessionId: userMsg.sessionId });
   }
 
   // Legacy stateless contract: { messages:[...] } (kept until clients migrate).
@@ -96,6 +81,28 @@ app.get('/history', (c) => {
   const before = Number.isFinite(beforeRaw) && beforeRaw > 0 ? beforeRaw : undefined;
   return c.json({ messages: store.history(limit, before) });
 });
+
+// ---- live assistant stream (SSE). Single-user, so one global stream: every
+// emitted bubble/typing/card reaches the open app. Replies for POST /chat arrive
+// here, including follow-ups that land minutes after an "on it". ----
+app.get('/stream', (c) =>
+  streamSSE(c, async (stream) => {
+    // Serialize writes per connection so events keep their order.
+    let writes = Promise.resolve();
+    const unsub = bus.subscribe((e) => {
+      writes = writes.then(() => stream.writeSSE({ data: JSON.stringify(e) })).catch(() => {});
+    });
+    stream.onAbort(unsub);
+    try {
+      while (!stream.aborted) {
+        await stream.sleep(15000);
+        await stream.writeSSE({ event: 'ping', data: '' });
+      }
+    } finally {
+      unsub();
+    }
+  })
+);
 
 // ---- web push (the free PWA poke channel) ----
 app.get('/vapidPublicKey', (c) => c.json({ key: config.vapidPublic }));

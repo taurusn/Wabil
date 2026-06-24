@@ -137,7 +137,7 @@ export async function tick(): Promise<TickResult> {
       } else {
         // The orchestrator voice phrases the poke from the classifier's facts.
         // If voicing fails, fall back to a plain poke so we still notify.
-        let poke: { title: string; body: string; url: string };
+        let poke: { title: string; body: string; url: string; tag: string };
         try {
           const voiced = await composePoke({
             from: d.from || m.from,
@@ -145,10 +145,12 @@ export async function tick(): Promise<TickResult> {
             summary: d.summary || m.subject,
             codes: d.codes,
           });
-          poke = { ...voiced, url: pokeUrl() };
+          // Inbox pokes live in their OWN tag namespace so they can never merge
+          // with a chat-reply push (wabil-chat-<id>); see bus.ts.
+          poke = { ...voiced, url: pokeUrl(), tag: `wabil-inbox-${m.id}` };
         } catch (e: any) {
           errors.push(`voice ${m.id}: ${e?.message || e}`);
-          poke = { title: 'wabil', body: d.summary || m.subject, url: pokeUrl() };
+          poke = { title: 'wabil', body: d.summary || m.subject, url: pokeUrl(), tag: `wabil-inbox-${m.id}` };
         }
         seen.put(m.id, {
           status: 'pending',

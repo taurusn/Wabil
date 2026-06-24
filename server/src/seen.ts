@@ -19,7 +19,7 @@ export type SeenStatus = 'baseline' | 'ignored' | 'pending' | 'poked';
 export type SeenRecord = {
   status: SeenStatus;
   decision?: 'now' | 'morning' | 'ignore';
-  poke?: { title: string; body: string; url?: string };
+  poke?: { title: string; body: string; url?: string; tag?: string };
   subject?: string;
   from?: string;
   classifiedAt: number;

@@ -68,10 +68,18 @@ function sessionForNow(now: number): string {
   return randomUUID();
 }
 
-export function addMessage(m: { role: Role; content: string; replyToId?: string | null }): StoredMsg {
+export function addMessage(m: {
+  role: Role;
+  content: string;
+  replyToId?: string | null;
+  sessionId?: string;
+}): StoredMsg {
   const msg: StoredMsg = {
     id: randomUUID(),
-    sessionId: sessionForNow(Date.now()),
+    // The runtime pins assistant replies to the user turn's session so a
+    // follow-up that lands minutes later (after a background agent) still
+    // belongs to the same conversation, not a new one.
+    sessionId: m.sessionId ?? sessionForNow(Date.now()),
     role: m.role,
     content: m.content,
     ts: Date.now(),
