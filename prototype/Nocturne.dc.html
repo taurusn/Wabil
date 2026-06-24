@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  input{ font-family:inherit; }
+  @keyframes breathe{
+    0%,100%{ box-shadow:0 0 16px 4px rgba(96,165,250,.42), 0 0 40px 11px rgba(96,165,250,.18); }
+    50%{ box-shadow:0 0 24px 6px rgba(96,165,250,.6), 0 0 60px 18px rgba(96,165,250,.28); }
+  }
+  @keyframes msgIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
+  @keyframes screenIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:translateY(0); } }
+  @keyframes think{ 0%,100%{ opacity:.25; transform:translateY(0); } 50%{ opacity:.95; transform:translateY(-3px); } }
+  @keyframes halo{ 0%,100%{ opacity:.65; transform:scale(1); } 50%{ opacity:1; transform:scale(1.07); } }
+  @keyframes breatheScale{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.025); } }
+  @keyframes drift{ from{ transform:translate(0,0); } to{ transform:translate(-16px,12px); } }
+</style>
+</helmet>
+<div style="min-height:100vh; width:100%; display:flex; align-items:center; justify-content:center; padding:40px 20px; font-family:'Inter',system-ui,sans-serif; background:radial-gradient(130% 90% at 50% -10%, #14181f 0%, #07080c 60%);">
+
+  <!-- iPhone frame -->
+  <div style="position:relative; width:374px; height:792px; border-radius:58px; padding:11px; background:linear-gradient(150deg,#23262f 0%,#15171d 42%,#0e1014 100%); box-shadow:0 40px 90px -26px rgba(0,0,0,.78), 0 0 0 1px rgba(120,150,200,.06), inset 0 0 0 2px rgba(255,255,255,.03);">
+    <!-- side buttons -->
+    <div style="position:absolute; left:-3px; top:150px; width:3px; height:30px; border-radius:3px; background:#1b1d24;"></div>
+    <div style="position:absolute; left:-3px; top:200px; width:3px; height:54px; border-radius:3px; background:#1b1d24;"></div>
+    <div style="position:absolute; left:-3px; top:268px; width:3px; height:54px; border-radius:3px; background:#1b1d24;"></div>
+    <div style="position:absolute; right:-3px; top:212px; width:3px; height:74px; border-radius:3px; background:#1b1d24;"></div>
+
+    <!-- screen -->
+    <div style="position:relative; width:100%; height:100%; border-radius:48px; overflow:hidden; display:flex; flex-direction:column; background:radial-gradient(135% 75% at 72% 6%, #1a2536 0%, #0b0d13 54%);">
+
+      <!-- slow living glow -->
+      <div style="position:absolute; inset:0; pointer-events:none; background:radial-gradient(58% 42% at 72% 5%, rgba(40,77,143,.4), transparent 62%); animation:drift 70s ease-in-out infinite alternate;"></div>
+
+      <!-- dynamic island -->
+      <div style="position:absolute; top:13px; left:50%; transform:translateX(-50%); width:118px; height:33px; border-radius:20px; background:#000; z-index:20;"></div>
+
+      <!-- status bar -->
+      <div style="flex:0 0 auto; height:54px; display:flex; align-items:center; justify-content:space-between; padding:16px 30px 0; position:relative; z-index:10;">
+        <span style="font-size:15px; font-weight:600; color:#eef2fa; letter-spacing:.2px;">9:41</span>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <div style="display:flex; align-items:flex-end; gap:2px; height:11px;">
+            <div style="width:3px; height:4px; background:#eef2fa; border-radius:1px;"></div>
+            <div style="width:3px; height:6px; background:#eef2fa; border-radius:1px;"></div>
+            <div style="width:3px; height:8px; background:#eef2fa; border-radius:1px;"></div>
+            <div style="width:3px; height:11px; background:#eef2fa; border-radius:1px;"></div>
+          </div>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 11.2 1 4.4a9.6 9.6 0 0 1 14 0L8 11.2Z" stroke="#eef2fa" stroke-width="1.2" fill="rgba(238,242,250,.35)"/></svg>
+          <div style="display:flex; align-items:center; gap:2px;">
+            <div style="width:23px; height:12px; border:1px solid rgba(238,242,250,.5); border-radius:3px; padding:1.5px;"><div style="width:78%; height:100%; background:#eef2fa; border-radius:1px;"></div></div>
+            <div style="width:1.5px; height:4px; background:rgba(238,242,250,.5); border-radius:0 1px 1px 0;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ SCREEN 01 · WELCOME ============ -->
+      <sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1; display:flex; flex-direction:column; min-height:0; animation:screenIn .42s ease-out both;">
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 40px; text-align:center;">
+          <div style="position:relative; width:96px; height:96px; margin-bottom:48px;">
+            <div style="position:absolute; inset:-16px; border-radius:50%; background:radial-gradient(circle, rgba(96,165,250,.3), transparent 68%); filter:blur(6px); animation:halo 4.5s ease-in-out infinite;"></div>
+            <div style="position:absolute; inset:0; border-radius:50%; background:radial-gradient(circle at 36% 30%, #cfecff 0%, #82b7f0 34%, #4f8fe0 62%, #2a4d8f 100%); box-shadow:inset 0 -7px 15px rgba(18,38,86,.55), inset 5px 7px 14px rgba(255,255,255,.32); animation:breatheScale 4.5s ease-in-out infinite;"></div>
+            <div style="position:absolute; top:19%; left:25%; width:22px; height:15px; border-radius:50%; background:rgba(255,255,255,.5); filter:blur(5px);"></div>
+          </div>
+          <h2 style="margin:0; font-family:'Fraunces',serif; font-weight:400; font-size:31px; line-height:1.22; letter-spacing:-.01em; color:#eef2fa;">a quiet presence<br>on your inbox.</h2>
+          <p style="margin:18px 0 0; font-size:15px; font-weight:300; line-height:1.55; color:#8492ac;">it watches what matters and speaks up only when it counts. the rest, it keeps to itself.</p>
+        </div>
+        <div style="padding:0 28px 32px;">
+          <div onClick="{{ goConnect }}" style="cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius:16px; padding:16px; font-size:15px; font-weight:500; color:#fff; background:linear-gradient(180deg,#3f7fdc,#2c5fb0); box-shadow:0 8px 24px -8px rgba(63,127,220,.7), inset 0 1px 0 rgba(255,255,255,.18);">Get started</div>
+          <div style="text-align:center; margin-top:18px; font-size:13.5px; color:#6f7d97;">already here? <b onClick="{{ goChat }}" style="cursor:pointer; color:#7fb0ff; font-weight:500;">sign in</b></div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ SCREEN 02 · CONNECT ============ -->
+      <sc-if value="{{ isConnect }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1; display:flex; flex-direction:column; min-height:0; padding:18px 28px 0; animation:screenIn .42s ease-out both;">
+        <div style="width:38px; height:38px; border-radius:50%; margin:6px auto 26px; background:radial-gradient(circle at 36% 30%, #aee0ff, #4f8fe0 55%, #2a4d8f 100%); animation:breathe 4.5s ease-in-out infinite;"></div>
+        <h2 style="margin:0; font-family:'Fraunces',serif; font-weight:400; font-size:25px; line-height:1.3; text-align:center; color:#eef2fa;">connect your inbox</h2>
+        <div style="margin-top:12px; font-size:14px; font-weight:300; line-height:1.55; text-align:center; color:#8492ac;">i read only what helps surface what matters. nothing ever leaves your account.</div>
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:34px;">
+          <div onClick="{{ goChat }}" style="cursor:pointer; display:flex; align-items:center; gap:11px; border-radius:16px; padding:15px; font-size:15px; font-weight:500; color:#cdd6e8; background:rgba(120,150,200,.06); border:1px solid rgba(140,170,220,.18);">
+            <span style="width:22px; height:22px; border-radius:5px; display:grid; place-items:center; font-size:13px; font-weight:700; background:#fff; color:#ea4335;">G</span> Continue with Gmail
+          </div>
+          <div onClick="{{ goChat }}" style="cursor:pointer; display:flex; align-items:center; gap:11px; border-radius:16px; padding:15px; font-size:15px; font-weight:500; color:#cdd6e8; background:rgba(120,150,200,.06); border:1px solid rgba(140,170,220,.18);">
+            <span style="width:22px; height:22px; border-radius:5px; display:grid; place-items:center; font-size:13px; font-weight:700; background:#0a66c2; color:#fff;">O</span> Continue with Outlook
+          </div>
+        </div>
+        <div style="margin-top:auto; padding:18px 0 32px; display:flex; gap:9px; align-items:flex-start; font-size:12px; font-weight:300; line-height:1.5; color:#6b7790;">
+          <span>🔒</span><span>Maximum Privacy is on by default. You can revoke access anytime in settings.</span>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ SCREEN 03 · CHAT ============ -->
+      <sc-if value="{{ isChat }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1; display:flex; flex-direction:column; min-height:0; animation:screenIn .42s ease-out both;">
+        <div onClick="{{ goConnections }}" style="cursor:pointer; flex:0 0 auto; padding:12px 26px 8px; display:flex; align-items:center; gap:11px;">
+          <div style="width:13px; height:13px; border-radius:50%; background:radial-gradient(circle at 36% 30%, #aee0ff, #4f8fe0 55%, #2a4d8f 100%); box-shadow:0 0 10px 2px rgba(96,165,250,.5); animation:breathe 4.5s ease-in-out infinite;"></div>
+          <div style="font-size:14px; font-weight:500; color:#aeb8cc;">untitled<small style="color:#5d6a85; font-weight:300;"> · listening</small></div>
+          <div style="margin-left:auto; color:#46506a; font-size:17px; font-weight:300; line-height:1;">›</div>
+        </div>
+
+        <div ref="{{ chatRef }}" style="flex:1; min-height:0; overflow-y:auto; padding:18px 22px 32px; display:flex; flex-direction:column; gap:19px;">
+          <sc-for list="{{ messages }}" as="m" hint-placeholder-count="4">
+            <sc-if value="{{ m.isBig }}" hint-placeholder-val="{{ true }}">
+              <div style="font-size:21px; font-weight:300; line-height:1.4; color:#dde4f1; animation:msgIn .32s ease-out both;">{{ m.line1 }}<br><span style="color:#6b7488;">{{ m.line2 }}</span></div>
+            </sc-if>
+            <sc-if value="{{ m.isMe }}" hint-placeholder-val="{{ false }}">
+              <div style="align-self:flex-end; max-width:76%; background:rgba(120,150,200,.12); border:1px solid rgba(140,170,220,.18); color:#d4ddee; border-radius:16px 16px 5px 16px; padding:10px 15px; font-size:14px; line-height:1.45; animation:msgIn .32s ease-out both;">{{ m.text }}</div>
+            </sc-if>
+            <sc-if value="{{ m.isProse }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:4px; animation:msgIn .32s ease-out both;">
+                <div style="display:flex; gap:10px; font-size:14px; font-weight:300; line-height:1.55; color:#8492ac;"><span style="color:#6ba8ff; flex:0 0 auto;">⌁</span><span>{{ m.text }}</span></div>
+                <sc-if value="{{ m.hasMeta }}" hint-placeholder-val="{{ false }}">
+                  <span style="margin-left:24px; font-size:11px; font-weight:300; letter-spacing:.04em; color:#5d6a85;">{{ m.meta }}</span>
+                </sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.isPill }}" hint-placeholder-val="{{ false }}">
+              <div style="align-self:flex-start; display:inline-flex; gap:9px; align-items:center; border-left:2px solid rgba(107,168,255,.5); border-radius:0 8px 8px 0; padding:7px 13px 7px 12px; font-size:13px; color:#aeb8cc; background:rgba(120,150,200,.04); animation:msgIn .32s ease-out both;">📩 {{ m.text }}</div>
+            </sc-if>
+          </sc-for>
+          <sc-if value="{{ thinking }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; gap:10px; align-items:center; padding:2px 0;">
+              <div style="width:13px; height:13px; flex:0 0 auto; border-radius:50%; background:radial-gradient(circle at 36% 30%, #aee0ff, #4f8fe0 55%, #2a4d8f 100%); box-shadow:0 0 10px 2px rgba(96,165,250,.5); animation:breathe 4.5s ease-in-out infinite;"></div>
+              <div style="display:flex; gap:5px; align-items:center;">
+                <div style="width:6px; height:6px; border-radius:50%; background:#6ba8ff; animation:think 1.2s ease-in-out infinite;"></div>
+                <div style="width:6px; height:6px; border-radius:50%; background:#6ba8ff; animation:think 1.2s ease-in-out infinite .18s;"></div>
+                <div style="width:6px; height:6px; border-radius:50%; background:#6ba8ff; animation:think 1.2s ease-in-out infinite .36s;"></div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="position:relative; flex:0 0 auto; padding:12px 18px 26px;">
+          <div style="position:absolute; left:0; right:0; top:-26px; height:26px; pointer-events:none; background:linear-gradient(to top, rgba(11,13,19,.85), rgba(11,13,19,0));"></div>
+          <div style="display:flex; align-items:center; gap:11px; border:1px solid rgba(130,160,210,.16); border-radius:24px; padding:12px 12px 12px 18px; background:rgba(120,150,200,.05);">
+            <input value="{{ draft }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" placeholder="say something…" style="flex:1; min-width:0; border:none; outline:none; background:transparent; color:#dde4f1; font-size:14px; font-weight:300;">
+            <div onClick="{{ send }}" style="cursor:pointer; width:34px; height:34px; flex:0 0 auto; display:grid; place-items:center; border-radius:50%; font-size:18px; transition:.25s ease;">
+              <sc-if value="{{ canSend }}" hint-placeholder-val="{{ false }}"><span style="color:#6ba8ff;">◍</span></sc-if>
+              <sc-if value="{{ cantSend }}" hint-placeholder-val="{{ true }}"><span style="color:#414c66;">◍</span></sc-if>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ SCREEN 04 · CONNECTIONS ============ -->
+      <sc-if value="{{ isConnections }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1; display:flex; flex-direction:column; min-height:0; animation:screenIn .42s ease-out both;">
+        <div style="flex:0 0 auto; padding:14px 24px 8px; display:flex; align-items:center; gap:12px;">
+          <div onClick="{{ goChat }}" style="cursor:pointer; width:30px; height:30px; display:grid; place-items:center; margin-left:-4px; color:#aeb8cc; font-size:20px;">‹</div>
+          <div style="font-family:'Fraunces',serif; font-size:24px; font-weight:500; color:#eef2fa;">Connections</div>
+        </div>
+        <div style="flex:1; min-height:0; overflow-y:auto; padding:8px 22px 24px; display:flex; flex-direction:column; gap:9px;">
+
+          <div style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#5d6a85; font-weight:600; margin:14px 4px 4px;">Inboxes</div>
+          <div style="display:flex; align-items:center; gap:13px; border:1px solid rgba(140,170,220,.14); border-radius:15px; padding:14px; background:rgba(120,150,200,.04);">
+            <span style="width:30px; height:30px; border-radius:8px; display:grid; place-items:center; font-size:15px; font-weight:700; background:#fff; color:#ea4335;">G</span>
+            <div style="font-size:14.5px; color:#dde4f1; font-weight:500;">hatim@gmail.com<small style="display:block; font-size:12px; color:#7e8aa3; font-weight:300; margin-top:2px;">Gmail</small></div>
+            <div style="margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; color:#5fd29a;"><i style="width:7px; height:7px; border-radius:50%; background:#5fd29a; box-shadow:0 0 8px 1px rgba(95,210,154,.5);"></i> connected</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:11px; color:#7fb0ff; font-size:14px; padding:13px 14px; border:1px dashed rgba(127,176,255,.3); border-radius:15px; cursor:pointer;">＋ Add another inbox</div>
+
+          <div style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#5d6a85; font-weight:600; margin:14px 4px 4px;">Privacy</div>
+          <div style="display:flex; align-items:center; gap:13px; border:1px solid rgba(140,170,220,.14); border-radius:15px; padding:14px; background:rgba(120,150,200,.04);">
+            <div style="font-size:14px; color:#dde4f1;">Maximum Privacy<small style="display:block; font-size:11.5px; color:#7e8aa3; font-weight:300; margin-top:2px;">No one but you sees your data</small></div>
+            <div onClick="{{ togglePrivacy }}" style="margin-left:auto; cursor:pointer;">
+              <sc-if value="{{ maxPrivacy }}" hint-placeholder-val="{{ true }}">
+                <div style="width:42px; height:25px; border-radius:13px; background:linear-gradient(180deg,#3f7fdc,#2c5fb0); position:relative; box-shadow:0 0 12px -2px rgba(63,127,220,.6); transition:.2s;"><i style="position:absolute; top:3px; left:20px; width:19px; height:19px; border-radius:50%; background:#fff; transition:.2s;"></i></div>
+              </sc-if>
+              <sc-if value="{{ privacyOff }}" hint-placeholder-val="{{ false }}">
+                <div style="width:42px; height:25px; border-radius:13px; background:rgba(120,150,200,.14); position:relative; transition:.2s;"><i style="position:absolute; top:3px; left:3px; width:19px; height:19px; border-radius:50%; background:#8492ac; transition:.2s;"></i></div>
+              </sc-if>
+            </div>
+          </div>
+
+          <div style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#5d6a85; font-weight:600; margin:14px 4px 4px;">Pokes <span style="color:#4a5468; font-weight:400; letter-spacing:0; text-transform:none;">· coming in v2</span></div>
+          <div style="display:flex; align-items:center; gap:13px; border:1px solid rgba(140,170,220,.14); border-radius:15px; padding:14px; background:rgba(120,150,200,.04); opacity:.55;">
+            <div style="font-size:14px; color:#dde4f1;">Proactive nudges<small style="display:block; font-size:11.5px; color:#7e8aa3; font-weight:300; margin-top:2px;">Get pinged when it truly matters</small></div>
+            <div style="margin-left:auto; width:42px; height:25px; border-radius:13px; background:rgba(120,150,200,.14); position:relative;"><i style="position:absolute; top:3px; left:3px; width:19px; height:19px; border-radius:50%; background:#8492ac;"></i></div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- home indicator -->
+      <div style="position:absolute; bottom:9px; left:50%; transform:translateX(-50%); width:128px; height:5px; border-radius:3px; background:rgba(238,242,250,.25); z-index:10;"></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: 480, &quot;height&quot;: 940 },
+  &quot;startScreen&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;welcome&quot;, &quot;options&quot;: [&quot;welcome&quot;, &quot;connect&quot;, &quot;chat&quot;, &quot;connections&quot;], &quot;tsType&quot;: &quot;string&quot; },
+  &quot;chatStart&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;seeded&quot;, &quot;options&quot;: [&quot;seeded&quot;, &quot;cold&quot;], &quot;tsType&quot;: &quot;string&quot; },
+  &quot;replyDelay&quot;: { &quot;editor&quot;: &quot;int&quot;, &quot;default&quot;: 1500, &quot;min&quot;: 300, &quot;max&quot;: 4000, &quot;step&quot;: 100, &quot;tsType&quot;: &quot;number&quot; }
+}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.chatRef = React.createRef();
+    const seeded = Component.seedMessages(props.chatStart);
+    this.state = {
+      screen: props.startScreen || 'welcome',
+      draft: '',
+      thinking: false,
+      maxPrivacy: true,
+      messages: seeded.messages,
+      nextId: seeded.nextId,
+    };
+    this.replies = [
+      "noted. i'll keep an eye on it and surface it only if it changes.",
+      "done. nothing else needs you right now, so i'll rest.",
+      "okay. i'm holding the rest till morning unless it turns urgent.",
+      "got it. i'll stay quiet until something actually matters.",
+    ];
+    this._replyIdx = 0;
+  }
+  static seedMessages(mode){
+    if (mode === 'cold') {
+      return { messages: [ { id:1, type:'prose', text:"i'm here. resting until something matters." } ], nextId: 2 };
+    }
+    return { messages: [
+      { id:1, type:'big', line1:"tonight's quiet.", line2:"nothing urgent." },
+      { id:2, type:'me', text:'good. thanks' },
+      { id:3, type:'prose', text:"one email from sara came in. it can wait till morning, so i'm holding it.", meta:'held since 11:04pm' },
+      { id:4, type:'me', text:'what did she say?' },
+      { id:5, type:'pill', text:'sara · re: friday plans' },
+      { id:6, type:'prose', text:"she's asking if 7pm still works. no rush, she said whenever." },
+    ], nextId: 7 };
+  }
+  componentDidUpdate(prevProps){
+    if (prevProps.startScreen !== this.props.startScreen && this.props.startScreen) {
+      this.setState({ screen: this.props.startScreen });
+    }
+    if (prevProps.chatStart !== this.props.chatStart) {
+      const seeded = Component.seedMessages(this.props.chatStart);
+      this.setState({ messages: seeded.messages, nextId: seeded.nextId, thinking: false });
+    }
+    if (this.state.screen === 'chat' && this.chatRef.current) {
+      this.chatRef.current.scrollTop = this.chatRef.current.scrollHeight;
+    }
+  }
+  go = (s) => this.setState({ screen: s });
+  onInput = (e) => this.setState({ draft: e.target.value });
+  send = () => {
+    const t = (this.state.draft || '').trim();
+    if (!t) return;
+    this.setState(s => ({
+      messages: [...s.messages, { id: s.nextId, type:'me', text: t }],
+      draft: '', nextId: s.nextId + 1, thinking: true,
+    }));
+    const delay = this.props.replyDelay != null ? this.props.replyDelay : 1500;
+    const reply = this.replies[this._replyIdx % this.replies.length];
+    this._replyIdx++;
+    clearTimeout(this._t);
+    this._t = setTimeout(() => {
+      this.setState(s => ({
+        messages: [...s.messages, { id: s.nextId, type:'prose', text: reply }],
+        nextId: s.nextId + 1, thinking: false,
+      }));
+    }, delay);
+  };
+  onKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); this.send(); } };
+  componentWillUnmount(){ clearTimeout(this._t); }
+  renderVals(){
+    const flag = (m) => ({
+      ...m,
+      isBig: m.type === 'big', isMe: m.type === 'me',
+      isProse: m.type === 'prose', isPill: m.type === 'pill',
+      hasMeta: !!m.meta,
+    });
+    const canSend = (this.state.draft || '').trim().length > 0;
+    return {
+      canSend, cantSend: !canSend,
+      isWelcome: this.state.screen === 'welcome',
+      isConnect: this.state.screen === 'connect',
+      isChat: this.state.screen === 'chat',
+      isConnections: this.state.screen === 'connections',
+      messages: this.state.messages.map(flag),
+      thinking: this.state.thinking,
+      draft: this.state.draft,
+      chatRef: this.chatRef,
+      maxPrivacy: this.state.maxPrivacy,
+      privacyOff: !this.state.maxPrivacy,
+      goConnect: () => this.go('connect'),
+      goChat: () => this.go('chat'),
+      goConnections: () => this.go('connections'),
+      onInput: this.onInput, onKey: this.onKey, send: this.send,
+      togglePrivacy: () => this.setState(s => ({ maxPrivacy: !s.maxPrivacy })),
+    };
+  }
+}
+</script>
+</body>
+</html>

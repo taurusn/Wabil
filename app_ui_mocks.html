@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Untitled — UI directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gap: 56px;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:#d8d9de;
+    background:radial-gradient(120% 80% at 50% 0%, #e8e9ee 0%, #cdced5 100%);
+    min-height:100vh;
+    padding:48px 24px 72px;
+    color:#17181c;
+    -webkit-font-smoothing:antialiased;
+  }
+  .head{ text-align:center; margin-bottom:40px; }
+  .head h1{ font-family:'Fraunces',serif; font-weight:500; font-size:30px; letter-spacing:-.01em; }
+  .head p{ font-size:14px; color:#5c5d66; margin-top:8px; font-weight:400; }
+  .rail{
+    display:flex; gap:var(--gap); justify-content:center; align-items:flex-start;
+    flex-wrap:wrap; max-width:1240px; margin:0 auto;
+  }
+  .col{ width:340px; }
+  .label{ text-align:center; margin-bottom:18px; }
+  .label .n{ font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:#86868f; font-weight:600; }
+  .label .t{ font-family:'Fraunces',serif; font-size:20px; font-weight:500; margin-top:4px; }
+  .label .d{ font-size:12.5px; color:#62636c; margin-top:6px; line-height:1.5; }
+
+  /* ---------- phone shell ---------- */
+  .phone{
+    width:340px; height:710px; border-radius:46px; overflow:hidden; position:relative;
+    box-shadow:0 30px 60px -20px rgba(20,22,30,.45), 0 8px 20px -8px rgba(20,22,30,.3);
+    border:9px solid #0c0d10;
+  }
+  .screen{ position:absolute; inset:0; display:flex; flex-direction:column; }
+  .statusbar{
+    height:50px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 26px 0 30px; font-size:14px; font-weight:600; flex:0 0 auto; padding-top:6px;
+  }
+  .statusbar .dots{ display:flex; gap:5px; align-items:center; }
+  .statusbar .dots span{ font-size:12px; letter-spacing:-.5px; }
+  .notch{ position:absolute; top:11px; left:50%; transform:translateX(-50%); width:118px; height:30px; border-radius:18px; background:#0c0d10; z-index:5; }
+  .apphead{ flex:0 0 auto; }
+  .chat{ flex:1 1 auto; overflow:hidden; padding:8px 18px 4px; display:flex; flex-direction:column; gap:11px; }
+  .row{ display:flex; }
+  .row.me{ justify-content:flex-end; }
+  .bub{ max-width:78%; padding:11px 15px; line-height:1.42; font-size:15px; }
+  .inbar{ flex:0 0 auto; padding:12px 18px 26px; }
+
+  /* ---------- 1 · NATIVE ---------- */
+  .native .screen{ background:#ffffff; font-family:-apple-system,'Inter',sans-serif; }
+  .native .statusbar{ color:#111; }
+  .native .apphead{
+    text-align:center; padding:6px 0 12px; border-bottom:.5px solid #e3e3e6;
+    display:grid; grid-template-columns:44px 1fr 44px; align-items:center;
+  }
+  .native .apphead .bk{ color:#0a84ff; font-size:24px; padding-left:14px; text-align:left; }
+  .native .apphead .nm{ font-size:16px; font-weight:600; color:#1a1a1c; }
+  .native .apphead .nm small{ display:block; font-size:11px; color:#9a9aa0; font-weight:400; margin-top:1px; }
+  .native .apphead .info{ color:#0a84ff; font-size:18px; padding-right:16px; text-align:right; }
+  .native .chat{ padding-top:14px; gap:8px; }
+  .native .bub{ border-radius:19px; }
+  .native .them{ background:#ebebee; color:#1a1a1c; border-bottom-left-radius:6px; }
+  .native .me .bub{ background:#0a84ff; color:#fff; border-bottom-right-radius:6px; }
+  .native .list{ display:flex; flex-direction:column; gap:7px; }
+  .native .list .it{ display:flex; gap:8px; }
+  .native .list .it b{ font-weight:600; }
+  .native .inbar{ }
+  .native .field{
+    display:flex; align-items:center; gap:8px; border:1px solid #dcdce0; border-radius:22px;
+    padding:9px 9px 9px 16px; color:#9a9aa0; font-size:15px;
+  }
+  .native .field .snd{ margin-left:auto; width:30px; height:30px; border-radius:50%; background:#0a84ff; color:#fff; display:grid; place-items:center; font-size:15px; }
+
+  /* ---------- 2 · EDITORIAL ---------- */
+  .editorial .screen{ background:#f6f1e7; font-family:'Newsreader',serif; color:#2b2620; }
+  .editorial .statusbar{ color:#2b2620; }
+  .editorial .apphead{ padding:10px 24px 14px; }
+  .editorial .apphead .wm{ font-family:'Fraunces',serif; font-weight:600; font-size:21px; letter-spacing:.02em; text-transform:uppercase; color:#1f1b15; }
+  .editorial .apphead .rule{ height:1px; background:linear-gradient(90deg,#c9b48f,transparent); margin-top:10px; }
+  .editorial .chat{ padding:18px 24px 4px; gap:16px; }
+  .editorial .them-big{ font-family:'Fraunces',serif; font-weight:400; font-size:25px; line-height:1.28; color:#241f18; letter-spacing:-.01em; }
+  .editorial .me .bub{ background:#2b2620; color:#f3ecdd; border-radius:16px 16px 4px 16px; font-size:15px; font-family:'Inter',sans-serif; }
+  .editorial .num{ display:flex; flex-direction:column; gap:0; margin-top:2px; }
+  .editorial .num .it{ display:flex; gap:14px; align-items:baseline; padding:13px 0; border-top:1px solid #e0d4ba; font-size:17px; }
+  .editorial .num .it:last-child{ border-bottom:1px solid #e0d4ba; }
+  .editorial .num .it .i{ font-family:'Fraunces',serif; font-weight:600; color:#b6892f; font-size:15px; width:16px; }
+  .editorial .num .it .meta{ margin-left:auto; font-family:'Inter',sans-serif; font-size:12px; color:#9a8a6b; letter-spacing:.02em; }
+  .editorial .inbar{ padding-bottom:26px; }
+  .editorial .field{ display:flex; align-items:center; gap:10px; border-top:1px solid #e0d4ba; padding:16px 4px 0; color:#a08f70; font-style:italic; font-size:17px; }
+  .editorial .field .snd{ margin-left:auto; font-style:normal; color:#b6892f; font-size:18px; }
+
+  /* ---------- 3 · NOCTURNE ---------- */
+  .nocturne .screen{
+    background:#0b0d13;
+    background:radial-gradient(130% 70% at 70% 8%, #1a2536 0%, #0b0d13 52%);
+    font-family:'Inter',sans-serif; color:#c9d1e0;
+  }
+  .nocturne .statusbar{ color:#e6ecf6; }
+  .nocturne .apphead{ padding:12px 26px 6px; display:flex; align-items:center; gap:12px; }
+  .nocturne .orb{
+    width:13px; height:13px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #8fd6ff, #3a7bd5 60%, #2a4d8f);
+    box-shadow:0 0 14px 3px rgba(96,165,250,.55), 0 0 30px 8px rgba(96,165,250,.22);
+  }
+  .nocturne .apphead .nm{ font-size:14px; font-weight:500; color:#aeb8cc; letter-spacing:.02em; }
+  .nocturne .apphead .nm small{ color:#5d6a85; }
+  .nocturne .chat{ padding:26px 24px 4px; gap:20px; }
+  .nocturne .them-big{ font-size:21px; font-weight:300; line-height:1.4; color:#dde4f1; letter-spacing:.005em; }
+  .nocturne .them-big .dim{ color:#6b7488; }
+  .nocturne .soft{ font-size:14px; font-weight:300; color:#7e8aa3; line-height:1.5; display:flex; gap:9px; }
+  .nocturne .soft .gl{ color:#6ba8ff; }
+  .nocturne .me .bub{
+    background:rgba(120,150,200,.12); border:1px solid rgba(140,170,220,.18);
+    color:#d4ddee; border-radius:16px 16px 5px 16px; font-size:14px; backdrop-filter:blur(4px);
+  }
+  .nocturne .dots3{ display:flex; gap:6px; padding-left:2px; }
+  .nocturne .dots3 i{ width:4px; height:4px; border-radius:50%; background:#39435c; }
+  .nocturne .inbar{ padding-bottom:26px; }
+  .nocturne .field{
+    display:flex; align-items:center; gap:11px; border:1px solid rgba(130,160,210,.16);
+    border-radius:22px; padding:12px 16px; color:#6f7b94; font-size:14px; font-weight:300;
+    background:rgba(120,150,200,.05);
+  }
+  .nocturne .field .snd{ margin-left:auto; color:#6ba8ff; }
+
+  .foot{ text-align:center; margin-top:48px; font-size:12.5px; color:#70717a; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>Untitled</h1>
+    <p>Three directions for the chat. Same conversation, three souls.</p>
+  </div>
+
+  <div class="rail">
+
+    <!-- 1 NATIVE -->
+    <div class="col">
+      <div class="label">
+        <div class="n">Direction 01</div>
+        <div class="t">Lived-in · Native</div>
+        <div class="d">Belongs in your phone. Invisible UI, the personality carries it.</div>
+      </div>
+      <div class="phone native">
+        <div class="notch"></div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><div class="dots"><span>5G</span><span>▮▮▮</span><span>87%</span></div></div>
+          <div class="apphead">
+            <div class="bk">‹</div>
+            <div class="nm">Untitled<small>active now</small></div>
+            <div class="info">ⓘ</div>
+          </div>
+          <div class="chat">
+            <div class="row"><div class="bub them">morning. three things want you today</div></div>
+            <div class="row me"><div class="bub">what are they</div></div>
+            <div class="row"><div class="bub them"><div class="list">
+              <div class="it"><span>•</span><span><b>visa</b> expires in 8 days</span></div>
+              <div class="it"><span>•</span><span>reply to <b>Sara</b> about friday</span></div>
+              <div class="it"><span>•</span><span><b>invoice</b> #2204 due</span></div>
+            </div></div></div>
+            <div class="row me"><div class="bub">handle the visa one</div></div>
+            <div class="row"><div class="bub them">on it 🫡</div></div>
+          </div>
+          <div class="inbar"><div class="field">message…<div class="snd">↑</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 EDITORIAL -->
+    <div class="col">
+      <div class="label">
+        <div class="n">Direction 02</div>
+        <div class="t">Editorial · Warm</div>
+        <div class="d">A companion with a point of view. Display serif, warm paper, no slop.</div>
+      </div>
+      <div class="phone editorial">
+        <div class="notch"></div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><div class="dots"><span>5G</span><span>▮▮▮</span><span>87%</span></div></div>
+          <div class="apphead">
+            <div class="wm">Untitled</div>
+            <div class="rule"></div>
+          </div>
+          <div class="chat">
+            <div class="row"><div class="them-big">Morning. Three things<br>want your attention.</div></div>
+            <div class="row me"><div class="bub">show me</div></div>
+            <div class="num">
+              <div class="it"><span class="i">I</span><span>Visa renewal</span><span class="meta">8 DAYS</span></div>
+              <div class="it"><span class="i">II</span><span>Reply to Sara</span><span class="meta">FRIDAY</span></div>
+              <div class="it"><span class="i">III</span><span>Invoice #2204</span><span class="meta">DUE</span></div>
+            </div>
+            <div class="row me"><div class="bub">start with the visa</div></div>
+          </div>
+          <div class="inbar"><div class="field">write…<div class="snd">✎</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 NOCTURNE -->
+    <div class="col">
+      <div class="label">
+        <div class="n">Direction 03</div>
+        <div class="t">Calm · Nocturnal</div>
+        <div class="d">Quiet, watchful at night. Soft glow, spacious, moodier.</div>
+      </div>
+      <div class="phone nocturne">
+        <div class="notch"></div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><div class="dots"><span>5G</span><span>▮▮▮</span><span>87%</span></div></div>
+          <div class="apphead">
+            <div class="orb"></div>
+            <div class="nm">Untitled<small> · listening</small></div>
+          </div>
+          <div class="chat">
+            <div class="them-big">Tonight's quiet.<br><span class="dim">nothing urgent.</span></div>
+            <div class="row me"><div class="bub">good. thanks</div></div>
+            <div class="soft"><span class="gl">⌁</span><span>one email from Sara came in. it can wait till morning, so i'm holding it.</span></div>
+            <div class="row me"><div class="bub">perfect</div></div>
+            <div class="dots3"><i></i><i></i><i></i></div>
+          </div>
+          <div class="inbar"><div class="field">say something…<div class="snd">◍</div></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">Untitled · pull-first MVP · chat screen — pick a direction and I'll build the full screens (Chat · Connections · Onboarding) in Figma.</div>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#07080c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="wabil">
+<title>wabil</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./app.css">
+</head>
+<body>
+  <!-- ===== CHAT (home) ===== -->
+  <main class="screen" id="chat-screen">
+    <header class="apphead">
+      <span class="orb"></span>
+      <span class="nm">wabil<small id="status"> · listening</small></span>
+      <button class="gear" id="open-settings" aria-label="connections">⚙</button>
+    </header>
+
+    <div class="chat" id="chat">
+      <div class="big">a quiet presence<br><span class="dim">on your inbox.</span></div>
+    </div>
+
+    <form class="inbar" id="composer">
+      <div class="field">
+        <input id="msg" autocomplete="off" placeholder="say something…" />
+        <button class="snd" id="send" aria-label="send">◍</button>
+      </div>
+    </form>
+  </main>
+
+  <!-- ===== SETTINGS / CONNECTIONS (overlay) ===== -->
+  <section class="screen settings hidden" id="settings-screen">
+    <header class="apphead">
+      <button class="back" id="close-settings" aria-label="back">‹</button>
+      <span class="ttl">connections</span>
+    </header>
+    <div class="body">
+      <div class="sec">inbox</div>
+      <div class="card">
+        <span class="ico gico">G</span>
+        <div class="nm" id="gmail-acct">Gmail<small>connected server-side</small></div>
+        <div class="st" id="gmail-st"><i></i> connected</div>
+      </div>
+
+      <div class="sec">pokes</div>
+      <div class="card">
+        <div class="lbl">proactive nudges<small id="poke-sub">get pinged when it truly matters</small></div>
+        <button class="toggle off" id="poke-toggle" aria-label="enable pokes"><i></i></button>
+      </div>
+      <p class="hint" id="poke-hint">add wabil to your home screen, then turn this on to allow notifications.</p>
+
+      <div class="sec">debug</div>
+      <button class="card linkrow" id="test-push">send a test poke</button>
+    </div>
+  </section>
+
+  <script src="./app.js"></script>
+</body>
+</html>

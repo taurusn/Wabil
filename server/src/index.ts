@@ -1,0 +1,91 @@
+import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { z } from 'zod';
+import { config } from './config.js';
+import { runOrchestrator, type ChatMessage } from './orchestrator.js';
+import {
+  addSubscription,
+  removeSubscription,
+  sendPoke,
+  subscriptionCount,
+  pushReady,
+  type PushSub,
+} from './push.js';
+
+const app = new Hono();
+app.use('/health', cors());
+app.use('/chat', cors());
+app.use('/vapidPublicKey', cors());
+app.use('/subscribe', cors());
+app.use('/unsubscribe', cors());
+app.use('/push/*', cors());
+
+app.get('/health', (c) =>
+  c.json({ ok: true, model: config.model, push: pushReady(), subscribers: subscriptionCount() })
+);
+
+const ChatBody = z.object({
+  messages: z
+    .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string() }))
+    .min(1),
+});
+
+app.post('/chat', async (c) => {
+  if (!config.anthropicKey) {
+    return c.json({ error: 'server missing ANTHROPIC_API_KEY (set it in server/.env)' }, 500);
+  }
+  const parsed = ChatBody.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json({ error: 'body must be { messages: [{role, content}, ...] }' }, 400);
+  }
+  try {
+    const reply = await runOrchestrator(parsed.data.messages as ChatMessage[]);
+    return c.json({ reply });
+  } catch (err: any) {
+    console.error('[chat] error:', err?.message || err);
+    return c.json({ error: err?.message || 'orchestrator failed' }, 500);
+  }
+});
+
+// ---- web push (the free PWA poke channel) ----
+app.get('/vapidPublicKey', (c) => c.json({ key: config.vapidPublic }));
+
+app.post('/subscribe', async (c) => {
+  const sub = (await c.req.json().catch(() => null)) as PushSub | null;
+  if (!sub?.endpoint) return c.json({ error: 'invalid subscription' }, 400);
+  addSubscription(sub);
+  return c.json({ ok: true, subscribers: subscriptionCount() });
+});
+
+app.post('/unsubscribe', async (c) => {
+  const { endpoint } = (await c.req.json().catch(() => ({}))) as { endpoint?: string };
+  if (endpoint) removeSubscription(endpoint);
+  return c.json({ ok: true, subscribers: subscriptionCount() });
+});
+
+app.post('/push/test', async (c) => {
+  try {
+    const sent = await sendPoke({
+      title: 'wabil',
+      body: 'this is a test poke. if you can read this, the channel works.',
+      url: './',
+    });
+    return c.json({ ok: true, sent });
+  } catch (err: any) {
+    return c.json({ error: err?.message || 'push failed' }, 500);
+  }
+});
+
+// ---- serve the PWA (everything not matched above) ----
+app.get('/', serveStatic({ path: `${config.pwaDir}/index.html` }));
+app.use('/*', serveStatic({ root: config.pwaDir }));
+
+serve({ fetch: app.fetch, port: config.port }, (info) => {
+  console.log(`\n  wabil server → http://localhost:${info.port}`);
+  console.log(`  PWA           served from ${config.pwaDir}`);
+  console.log(`  POST /chat    { messages:[{role,content}] } -> { reply }`);
+  console.log(`  push          ${pushReady() ? 'ready' : '⚠ no VAPID keys'} · ${subscriptionCount()} subscriber(s)`);
+  console.log(`  model: ${config.model}${config.anthropicKey ? '' : '   ⚠ no API key set'}\n`);
+});

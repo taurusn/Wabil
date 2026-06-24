@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+
+# secrets / runtime state
+.env
+.env.*
+!.env.example
+server/data/
+
+# the old React Native attempt — superseded by the PWA, kept on disk only
+/app/
+
+# logs / os
+*.log
+.DS_Store
+.expo/

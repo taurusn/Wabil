@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Untitled — Nocturnal screen set</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:#07080c;
+    background:radial-gradient(130% 90% at 50% -10%, #14181f 0%, #07080c 60%);
+    min-height:100vh; padding:48px 24px 80px; color:#e6ecf6; -webkit-font-smoothing:antialiased;
+  }
+  .head{ text-align:center; margin-bottom:42px; }
+  .head h1{ font-family:'Fraunces',serif; font-weight:500; font-size:30px; letter-spacing:-.01em; color:#eef2fa; }
+  .head p{ font-size:13.5px; color:#7e8aa3; margin-top:8px; }
+  .rail{ display:flex; gap:48px; justify-content:center; align-items:flex-start; flex-wrap:wrap; max-width:1560px; margin:0 auto; }
+  .col{ width:330px; }
+  .label{ text-align:center; margin-bottom:18px; }
+  .label .n{ font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:#5d6a85; font-weight:600; }
+  .label .t{ font-family:'Fraunces',serif; font-size:19px; font-weight:500; margin-top:4px; color:#dde4f1; }
+
+  /* phone shell */
+  .phone{ width:330px; height:700px; border-radius:46px; overflow:hidden; position:relative;
+    box-shadow:0 34px 70px -22px rgba(0,0,0,.7), 0 0 0 1px rgba(120,150,200,.08);
+    border:9px solid #15171d; }
+  .screen{ position:absolute; inset:0; display:flex; flex-direction:column;
+    background:#0b0d13; background:radial-gradient(135% 75% at 72% 6%, #1a2536 0%, #0b0d13 54%); }
+  .notch{ position:absolute; top:11px; left:50%; transform:translateX(-50%); width:114px; height:29px; border-radius:18px; background:#15171d; z-index:5; }
+  .statusbar{ height:50px; display:flex; align-items:center; justify-content:space-between; padding:6px 26px 0 30px; font-size:14px; font-weight:600; color:#e6ecf6; flex:0 0 auto; }
+  .statusbar .dots{ display:flex; gap:5px; } .statusbar .dots span{ font-size:12px; }
+
+  /* orb */
+  .orb{ border-radius:50%; background:radial-gradient(circle at 36% 30%, #aee0ff, #4f8fe0 55%, #2a4d8f 100%);
+    box-shadow:0 0 18px 4px rgba(96,165,250,.5), 0 0 44px 12px rgba(96,165,250,.22); animation:breathe 4.5s ease-in-out infinite; }
+  @keyframes breathe{ 0%,100%{ box-shadow:0 0 16px 4px rgba(96,165,250,.42),0 0 40px 11px rgba(96,165,250,.18); }
+    50%{ box-shadow:0 0 24px 6px rgba(96,165,250,.6),0 0 60px 18px rgba(96,165,250,.28); } }
+
+  /* buttons / rows shared */
+  .btn{ display:flex; align-items:center; justify-content:center; gap:10px; border-radius:16px; padding:15px; font-size:15px; font-weight:500; }
+  .btn.primary{ background:linear-gradient(180deg,#3f7fdc,#2c5fb0); color:#fff; box-shadow:0 8px 24px -8px rgba(63,127,220,.7), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn.ghost{ background:rgba(120,150,200,.06); border:1px solid rgba(140,170,220,.18); color:#cdd6e8; }
+  .ico{ width:22px; height:22px; border-radius:5px; display:grid; place-items:center; font-size:13px; font-weight:700; }
+
+  /* ===== screen 1 · welcome ===== */
+  .s-welcome .body{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 38px; text-align:center; }
+  .s-welcome .orb{ width:96px; height:96px; margin-bottom:46px; }
+  .s-welcome h2{ font-family:'Fraunces',serif; font-weight:400; font-size:30px; line-height:1.22; color:#eef2fa; letter-spacing:-.01em; }
+  .s-welcome p{ font-size:15px; font-weight:300; color:#8492ac; line-height:1.55; margin-top:18px; }
+  .s-welcome .foot{ padding:0 28px 30px; }
+  .s-welcome .signin{ text-align:center; margin-top:18px; font-size:13.5px; color:#6f7d97; }
+  .s-welcome .signin b{ color:#7fb0ff; font-weight:500; }
+
+  /* ===== screen 2 · connect ===== */
+  .s-connect .body{ flex:1; display:flex; flex-direction:column; padding:18px 28px 0; }
+  .s-connect .orb{ width:38px; height:38px; margin:6px auto 26px; }
+  .s-connect h2{ font-family:'Fraunces',serif; font-weight:400; font-size:25px; color:#eef2fa; text-align:center; line-height:1.3; }
+  .s-connect .sub{ font-size:14px; font-weight:300; color:#8492ac; text-align:center; margin-top:12px; line-height:1.55; }
+  .s-connect .opts{ display:flex; flex-direction:column; gap:12px; margin-top:34px; }
+  .s-connect .gico{ background:#fff; color:#ea4335; }
+  .s-connect .oico{ background:#0a66c2; color:#fff; }
+  .s-connect .priv{ margin-top:auto; padding:18px 0 30px; display:flex; gap:9px; align-items:flex-start; font-size:12px; font-weight:300; color:#6b7790; line-height:1.5; }
+  .s-connect .priv .lk{ color:#5d6a85; }
+
+  /* ===== screen 3 · chat ===== */
+  .s-chat .apphead{ padding:12px 26px 6px; display:flex; align-items:center; gap:11px; flex:0 0 auto; }
+  .s-chat .apphead .orb{ width:13px; height:13px; }
+  .s-chat .apphead .nm{ font-size:14px; font-weight:500; color:#aeb8cc; }
+  .s-chat .apphead .nm small{ color:#5d6a85; font-weight:300; }
+  .s-chat .chat{ flex:1; padding:24px 22px 4px; display:flex; flex-direction:column; gap:19px; overflow:hidden; }
+  .s-chat .big{ font-size:21px; font-weight:300; line-height:1.4; color:#dde4f1; }
+  .s-chat .big .dim{ color:#6b7488; }
+  .s-chat .me{ align-self:flex-end; background:rgba(120,150,200,.12); border:1px solid rgba(140,170,220,.18); color:#d4ddee; border-radius:16px 16px 5px 16px; padding:10px 15px; font-size:14px; max-width:76%; }
+  .s-chat .soft{ font-size:14px; font-weight:300; color:#8492ac; line-height:1.55; display:flex; gap:10px; }
+  .s-chat .soft .gl{ color:#6ba8ff; }
+  .s-chat .pill{ align-self:flex-start; display:inline-flex; gap:8px; align-items:center; border:1px solid rgba(140,170,220,.18); border-radius:12px; padding:9px 13px; font-size:13px; color:#aeb8cc; background:rgba(120,150,200,.05); }
+  .s-chat .inbar{ padding:12px 18px 26px; flex:0 0 auto; }
+  .s-chat .field{ display:flex; align-items:center; gap:11px; border:1px solid rgba(130,160,210,.16); border-radius:22px; padding:12px 16px; color:#6f7b94; font-size:14px; font-weight:300; background:rgba(120,150,200,.05); }
+  .s-chat .field .snd{ margin-left:auto; color:#6ba8ff; }
+
+  /* ===== screen 4 · connections ===== */
+  .s-set .apphead{ padding:14px 26px 8px; flex:0 0 auto; }
+  .s-set .apphead .ttl{ font-family:'Fraunces',serif; font-size:24px; font-weight:500; color:#eef2fa; }
+  .s-set .body{ flex:1; padding:14px 22px; display:flex; flex-direction:column; gap:9px; }
+  .s-set .sec{ font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#5d6a85; font-weight:600; margin:14px 4px 4px; }
+  .s-set .card{ display:flex; align-items:center; gap:13px; border:1px solid rgba(140,170,220,.14); border-radius:15px; padding:14px; background:rgba(120,150,200,.04); }
+  .s-set .card .nm{ font-size:14.5px; color:#dde4f1; font-weight:500; }
+  .s-set .card .nm small{ display:block; font-size:12px; color:#7e8aa3; font-weight:300; margin-top:2px; }
+  .s-set .card .st{ margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; color:#5fd29a; }
+  .s-set .card .st i{ width:7px; height:7px; border-radius:50%; background:#5fd29a; box-shadow:0 0 8px 1px rgba(95,210,154,.5); }
+  .s-set .add{ display:flex; align-items:center; gap:11px; color:#7fb0ff; font-size:14px; padding:13px 14px; border:1px dashed rgba(127,176,255,.3); border-radius:15px; }
+  .s-set .toggle{ margin-left:auto; width:42px; height:25px; border-radius:13px; background:linear-gradient(180deg,#3f7fdc,#2c5fb0); position:relative; box-shadow:0 0 12px -2px rgba(63,127,220,.6); }
+  .s-set .toggle.off{ background:rgba(120,150,200,.14); box-shadow:none; }
+  .s-set .toggle i{ position:absolute; top:3px; left:20px; width:19px; height:19px; border-radius:50%; background:#fff; transition:.2s; }
+  .s-set .toggle.off i{ left:3px; background:#8492ac; }
+  .s-set .card .lbl{ font-size:14px; color:#dde4f1; }
+  .s-set .card .lbl small{ display:block; font-size:11.5px; color:#7e8aa3; font-weight:300; margin-top:2px; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>Untitled · Nocturnal</h1>
+    <p>Pull-first MVP — the full screen set. The orb is the interim brand mark.</p>
+  </div>
+
+  <div class="rail">
+
+    <!-- 1 WELCOME -->
+    <div class="col">
+      <div class="label"><div class="n">Screen 01</div><div class="t">Welcome</div></div>
+      <div class="phone s-welcome"><div class="notch"></div><div class="screen">
+        <div class="statusbar"><span>9:41</span><div class="dots"><span>5G</span><span>87%</span></div></div>
+        <div class="body">
+          <div class="orb"></div>
+          <h2>A quiet presence<br>on your inbox.</h2>
+          <p>It watches what matters and speaks up only when it counts. The rest, it keeps to itself.</p>
+        </div>
+        <div class="foot">
+          <div class="btn primary">Get started</div>
+          <div class="signin">already here? <b>sign in</b></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 2 CONNECT -->
+    <div class="col">
+      <div class="label"><div class="n">Screen 02</div><div class="t">Connect inbox</div></div>
+      <div class="phone s-connect"><div class="notch"></div><div class="screen">
+        <div class="statusbar"><span>9:41</span><div class="dots"><span>5G</span><span>87%</span></div></div>
+        <div class="body">
+          <div class="orb"></div>
+          <h2>Connect your inbox</h2>
+          <div class="sub">I read only what helps surface what matters. Nothing ever leaves your account.</div>
+          <div class="opts">
+            <div class="btn ghost"><span class="ico gico">G</span> Continue with Gmail</div>
+            <div class="btn ghost"><span class="ico oico">O</span> Continue with Outlook</div>
+          </div>
+          <div class="priv"><span class="lk">🔒</span><span>Maximum Privacy is on by default. You can revoke access anytime in settings.</span></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 3 CHAT -->
+    <div class="col">
+      <div class="label"><div class="n">Screen 03 · the face</div><div class="t">Chat</div></div>
+      <div class="phone s-chat"><div class="notch"></div><div class="screen">
+        <div class="statusbar"><span>9:41</span><div class="dots"><span>5G</span><span>87%</span></div></div>
+        <div class="apphead"><div class="orb"></div><div class="nm">Untitled<small> · listening</small></div></div>
+        <div class="chat">
+          <div class="big">Tonight's quiet.<br><span class="dim">nothing urgent.</span></div>
+          <div class="me">good. thanks</div>
+          <div class="soft"><span class="gl">⌁</span><span>one email from Sara came in. it can wait till morning, so i'm holding it.</span></div>
+          <div class="me">what did she say?</div>
+          <div class="pill">📩 Sara · re: friday plans</div>
+          <div class="soft"><span class="gl">⌁</span><span>she's asking if 7pm still works. no rush, she said whenever.</span></div>
+        </div>
+        <div class="inbar"><div class="field">say something…<div class="snd">◍</div></div></div>
+      </div></div>
+    </div>
+
+    <!-- 4 CONNECTIONS -->
+    <div class="col">
+      <div class="label"><div class="n">Screen 04</div><div class="t">Connections</div></div>
+      <div class="phone s-set"><div class="notch"></div><div class="screen">
+        <div class="statusbar"><span>9:41</span><div class="dots"><span>5G</span><span>87%</span></div></div>
+        <div class="apphead"><div class="ttl">Connections</div></div>
+        <div class="body">
+          <div class="sec">Inboxes</div>
+          <div class="card">
+            <span class="ico gico" style="width:30px;height:30px;border-radius:8px;font-size:15px;">G</span>
+            <div class="nm">hatim@gmail.com<small>Gmail</small></div>
+            <div class="st"><i></i> connected</div>
+          </div>
+          <div class="add">＋ Add another inbox</div>
+
+          <div class="sec">Privacy</div>
+          <div class="card">
+            <div class="lbl">Maximum Privacy<small>No one but you sees your data</small></div>
+            <div class="toggle"><i></i></div>
+          </div>
+
+          <div class="sec">Pokes <span style="color:#4a5468;font-weight:400;letter-spacing:0;text-transform:none;">· coming in v2</span></div>
+          <div class="card" style="opacity:.55;">
+            <div class="lbl">Proactive nudges<small>Get pinged when it truly matters</small></div>
+            <div class="toggle off"><i></i></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+</body>
+</html>

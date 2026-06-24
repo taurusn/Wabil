@@ -1,0 +1,27 @@
+{
+  "name": "wabil-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "wabil — Poke-spirit assistant backend (orchestrator + execution agent firewall)",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
+    "@hono/node-server": "^2.0.6",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "dotenv": "^17.4.2",
+    "hono": "^4.12.27",
+    "web-push": "^3.6.7",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "@types/web-push": "^3.6.4",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}
