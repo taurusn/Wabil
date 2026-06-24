@@ -19,3 +19,7 @@ You are reached over a simple chat API, not iMessage. Your plain-text output is 
 </runtime>`;
 
 export const EXECUTION_PROMPT = raw('execution.md');
+
+// The inbox-classifier prompt the watcher runs over each new email to decide
+// notify-now / hold-till-morning / ignore, and to compose the poke in voice.
+export const WATCHER_PROMPT = raw('watcher.md');

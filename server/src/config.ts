@@ -17,4 +17,12 @@ export const config = {
   vapidPrivate: process.env.VAPID_PRIVATE || '',
   vapidSubject: process.env.VAPID_SUBJECT || 'mailto:admin@example.com',
   pwaDir: process.env.PWA_DIR || '../app/dist',
+
+  // Watcher (proactive poke loop)
+  watchEnabled: process.env.WATCH_ENABLED !== 'false',
+  watchIntervalMs: Number(process.env.WATCH_INTERVAL_MS || 300000), // 5 min
+  watchQuery: process.env.WATCH_QUERY || 'in:inbox is:unread newer_than:2d',
+  watchMax: Number(process.env.WATCH_MAX || 10),
+  watchTz: process.env.WATCH_TZ || 'Asia/Riyadh',
+  watchMorningHour: Number(process.env.WATCH_MORNING_HOUR || 7),
 } as const;

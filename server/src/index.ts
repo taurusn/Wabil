@@ -13,6 +13,7 @@ import {
   pushReady,
   type PushSub,
 } from './push.js';
+import { startWatcher, watcherStatus, tick } from './watcher.js';
 
 const app = new Hono();
 app.use('/health', cors());
@@ -21,6 +22,7 @@ app.use('/vapidPublicKey', cors());
 app.use('/subscribe', cors());
 app.use('/unsubscribe', cors());
 app.use('/push/*', cors());
+app.use('/watch/*', cors());
 
 app.get('/health', (c) =>
   c.json({ ok: true, model: config.model, push: pushReady(), subscribers: subscriptionCount() })
@@ -78,6 +80,17 @@ app.post('/push/test', async (c) => {
   }
 });
 
+// ---- watcher (proactive poke loop) ----
+app.get('/watch/status', (c) => c.json(watcherStatus()));
+
+app.post('/watch/tick', async (c) => {
+  try {
+    return c.json({ ok: true, ...(await tick()) });
+  } catch (err: any) {
+    return c.json({ ok: false, error: err?.message || 'watch tick failed' }, 500);
+  }
+});
+
 // ---- serve the PWA (everything not matched above) ----
 app.get('/', serveStatic({ path: `${config.pwaDir}/index.html` }));
 app.use('/*', serveStatic({ root: config.pwaDir }));
@@ -87,5 +100,7 @@ serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`  PWA           served from ${config.pwaDir}`);
   console.log(`  POST /chat    { messages:[{role,content}] } -> { reply }`);
   console.log(`  push          ${pushReady() ? 'ready' : '⚠ no VAPID keys'} · ${subscriptionCount()} subscriber(s)`);
-  console.log(`  model: ${config.model}${config.anthropicKey ? '' : '   ⚠ no API key set'}\n`);
+  console.log(`  model: ${config.model}${config.anthropicKey ? '' : '   ⚠ no API key set'}`);
+  startWatcher();
+  console.log('');
 });
