@@ -108,6 +108,48 @@ export function InputBar({ onSend }: { onSend?: (text: string) => void }) {
   );
 }
 
+// A calm time separator between sessions (a >5h gap = a fresh conversation).
+export function SessionDivider({ label }: { label: string }) {
+  return (
+    <View style={styles.divider}>
+      <Text style={styles.dividerLabel}>{label}</Text>
+    </View>
+  );
+}
+
+// A quoted reference to another message — shown above a reply, and in the
+// composer while you're replying (with a cancel ✕).
+export function Quoted({
+  who,
+  text,
+  align = 'left',
+  onPress,
+  onCancel,
+}: {
+  who: string;
+  text: string;
+  align?: 'left' | 'right';
+  onPress?: () => void;
+  onCancel?: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={[styles.quoted, align === 'right' && styles.quotedRight]}>
+      <View style={styles.quotedBar} />
+      <View style={styles.quotedBody}>
+        <Text style={styles.quotedWho}>{who}</Text>
+        <Text style={styles.quotedText} numberOfLines={1}>
+          {text}
+        </Text>
+      </View>
+      {onCancel ? (
+        <Pressable onPress={onCancel} hitSlop={10}>
+          <Text style={styles.quotedX}>✕</Text>
+        </Pressable>
+      ) : null}
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   statement: { fontFamily: font.light, fontSize: 21, lineHeight: 30, color: color.textPrimary },
   statementDim: { color: color.textDim },
@@ -174,4 +216,24 @@ const styles = StyleSheet.create({
   sendBtnIdle: { backgroundColor: 'rgba(120,150,200,0.14)', shadowOpacity: 0 },
   sendIcon: { color: color.white, fontSize: 17, fontFamily: font.semibold, lineHeight: 20 },
   sendIconIdle: { color: color.textMuted },
+  divider: { alignItems: 'center', paddingVertical: 10 },
+  dividerLabel: { fontFamily: font.light, fontSize: 11.5, letterSpacing: 0.4, color: color.textMuted },
+  quoted: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    alignSelf: 'flex-start',
+    maxWidth: '82%',
+    backgroundColor: color.surfaceSoft,
+    borderRadius: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    marginBottom: 5,
+  },
+  quotedRight: { alignSelf: 'flex-end' },
+  quotedBar: { width: 2.5, alignSelf: 'stretch', borderRadius: 2, backgroundColor: color.accentGlow, opacity: 0.7 },
+  quotedBody: { flex: 1 },
+  quotedWho: { fontFamily: font.medium, fontSize: 11, color: color.accentGlow, marginBottom: 1 },
+  quotedText: { fontFamily: font.light, fontSize: 12.5, color: color.textDim },
+  quotedX: { color: color.textMuted, fontSize: 13, paddingHorizontal: 2 },
 });

@@ -13,6 +13,9 @@ export const config = {
   model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-6',
   port: Number(process.env.PORT || 8787),
   maxTokens: 2048,
+  // Chat memory: a gap longer than this starts a fresh session (default 5h).
+  chatSessionGapMs: Number(process.env.CHAT_SESSION_GAP_MS || 5 * 60 * 60 * 1000),
+
   vapidPublic: process.env.VAPID_PUBLIC || '',
   vapidPrivate: process.env.VAPID_PRIVATE || '',
   vapidSubject: process.env.VAPID_SUBJECT || 'mailto:admin@example.com',

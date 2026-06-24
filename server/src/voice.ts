@@ -1,5 +1,6 @@
 import { runTurn, textOf } from './anthropic.js';
 import { VOICE_PROMPT } from './prompts.js';
+import { sanitize } from './sanitize.js';
 import type { EmailMeta } from './watcher.js';
 
 // wabil's user-facing voice. The watcher CLASSIFIES and EXTRACTS; everything the
@@ -13,19 +14,6 @@ export type PokeFacts = {
   summary: string;
   codes?: string;
 };
-
-// The orchestrator runs the raw Poke prompt, which emits <aside> private
-// reasoning and <block>/link artifacts. Strip them so only the clean voiced
-// text reaches the user (same rule the chat applies client-side).
-function sanitize(raw: string): string {
-  return String(raw)
-    .replace(/<aside>[\s\S]*?<\/aside>/gi, '')
-    .replace(/<\/?block>/gi, '')
-    .replace(/\[[^\]]*\]\([^)]*\)/g, '')
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
 
 function extractJson(s: string): any {
   const m = s.match(/\{[\s\S]*\}/);

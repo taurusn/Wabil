@@ -15,10 +15,13 @@ import {
 } from './push.js';
 import { startWatcher, watcherStatus, tick } from './watcher.js';
 import { buildDigest, DIGEST_PAGE } from './digest.js';
+import * as store from './store.js';
+import { sanitize } from './sanitize.js';
 
 const app = new Hono();
 app.use('/health', cors());
 app.use('/chat', cors());
+app.use('/history', cors());
 app.use('/vapidPublicKey', cors());
 app.use('/subscribe', cors());
 app.use('/unsubscribe', cors());
@@ -40,9 +43,42 @@ app.post('/chat', async (c) => {
   if (!config.anthropicKey) {
     return c.json({ error: 'server missing ANTHROPIC_API_KEY (set it in server/.env)' }, 500);
   }
-  const parsed = ChatBody.safeParse(await c.req.json().catch(() => null));
+  const body = (await c.req.json().catch(() => null)) as any;
+
+  // Stateful contract: { text, replyToId? }. The server persists the turn,
+  // assembles the session (+ reply excerpt), and persists the reply.
+  if (body && typeof body.text === 'string') {
+    const text = body.text.trim();
+    if (!text) return c.json({ error: 'text is empty' }, 400);
+    const replyToId = typeof body.replyToId === 'string' ? body.replyToId : null;
+    try {
+      const userMsg = store.addMessage({ role: 'user', content: text, replyToId });
+      const session = store.sessionMessages(userMsg.sessionId);
+      const messages = session.map((m) => ({ role: m.role, content: m.content }));
+      if (replyToId) {
+        const block = store.replyContextBlock(replyToId);
+        if (block) messages[messages.length - 1] = { role: 'user', content: `${block}\n\n${text}` };
+      }
+      const reply = sanitize(await runOrchestrator(messages as ChatMessage[]));
+      const asst = store.addMessage({ role: 'assistant', content: reply });
+      return c.json({
+        id: userMsg.id,
+        ts: userMsg.ts,
+        sessionId: userMsg.sessionId,
+        reply,
+        replyId: asst.id,
+        replyTs: asst.ts,
+      });
+    } catch (err: any) {
+      console.error('[chat] error:', err?.message || err);
+      return c.json({ error: err?.message || 'orchestrator failed' }, 500);
+    }
+  }
+
+  // Legacy stateless contract: { messages:[...] } (kept until clients migrate).
+  const parsed = ChatBody.safeParse(body);
   if (!parsed.success) {
-    return c.json({ error: 'body must be { messages: [{role, content}, ...] }' }, 400);
+    return c.json({ error: 'body must be { text, replyToId? } or { messages }' }, 400);
   }
   try {
     const reply = await runOrchestrator(parsed.data.messages as ChatMessage[]);
@@ -51,6 +87,14 @@ app.post('/chat', async (c) => {
     console.error('[chat] error:', err?.message || err);
     return c.json({ error: err?.message || 'orchestrator failed' }, 500);
   }
+});
+
+// ---- chat history (pagination: ?limit, ?before=<ts cursor>) ----
+app.get('/history', (c) => {
+  const limit = Math.min(Math.max(Number(c.req.query('limit')) || 40, 1), 200);
+  const beforeRaw = Number(c.req.query('before'));
+  const before = Number.isFinite(beforeRaw) && beforeRaw > 0 ? beforeRaw : undefined;
+  return c.json({ messages: store.history(limit, before) });
 });
 
 // ---- web push (the free PWA poke channel) ----
