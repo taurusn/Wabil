@@ -75,6 +75,7 @@ function Dot({ index }: { index: number }) {
 
 export function InputBar({ onSend }: { onSend?: (text: string) => void }) {
   const [val, setVal] = React.useState('');
+  const active = val.trim().length > 0;
   const submit = () => {
     const t = val.trim();
     if (!t) return;
@@ -92,10 +93,16 @@ export function InputBar({ onSend }: { onSend?: (text: string) => void }) {
         onSubmitEditing={submit}
         returnKeyType="send"
       />
-      <Pressable onPress={submit} hitSlop={10} style={({ pressed }) => pressed && { opacity: 0.85 }}>
-        <LinearGradient colors={[color.btnGradA, color.btnGradB]} style={styles.sendBtn}>
-          <Text style={styles.sendIcon}>↑</Text>
-        </LinearGradient>
+      <Pressable onPress={submit} hitSlop={10} disabled={!active} style={({ pressed }) => pressed && { opacity: 0.85 }}>
+        {active ? (
+          <LinearGradient colors={[color.btnGradA, color.btnGradB]} style={styles.sendBtn}>
+            <Text style={styles.sendIcon}>↑</Text>
+          </LinearGradient>
+        ) : (
+          <View style={[styles.sendBtn, styles.sendBtnIdle]}>
+            <Text style={[styles.sendIcon, styles.sendIconIdle]}>↑</Text>
+          </View>
+        )}
       </Pressable>
     </View>
   );
@@ -164,5 +171,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 10,
   },
+  sendBtnIdle: { backgroundColor: 'rgba(120,150,200,0.14)', shadowOpacity: 0 },
   sendIcon: { color: color.white, fontSize: 17, fontFamily: font.semibold, lineHeight: 20 },
+  sendIconIdle: { color: color.textMuted },
 });
