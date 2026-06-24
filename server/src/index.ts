@@ -14,6 +14,7 @@ import {
   type PushSub,
 } from './push.js';
 import { startWatcher, watcherStatus, tick } from './watcher.js';
+import { buildDigest, DIGEST_PAGE } from './digest.js';
 
 const app = new Hono();
 app.use('/health', cors());
@@ -23,6 +24,7 @@ app.use('/subscribe', cors());
 app.use('/unsubscribe', cors());
 app.use('/push/*', cors());
 app.use('/watch/*', cors());
+app.use('/api/*', cors());
 
 app.get('/health', (c) =>
   c.json({ ok: true, model: config.model, push: pushReady(), subscribers: subscriptionCount() })
@@ -72,7 +74,7 @@ app.post('/push/test', async (c) => {
     const sent = await sendPoke({
       title: 'wabil',
       body: 'this is a test poke. if you can read this, the channel works.',
-      url: './',
+      url: '/digest',
     });
     return c.json({ ok: true, sent });
   } catch (err: any) {
@@ -91,11 +93,22 @@ app.post('/watch/tick', async (c) => {
   }
 });
 
+// ---- morning digest (what a poke tap opens) ----
+app.get('/api/digest', async (c) => {
+  if (!config.anthropicKey) return c.json({ error: 'server missing ANTHROPIC_API_KEY' }, 500);
+  try {
+    return c.json(await buildDigest(c.req.query('force') === '1'));
+  } catch (err: any) {
+    return c.json({ error: err?.message || 'digest failed' }, 500);
+  }
+});
+app.get('/digest', (c) => c.html(DIGEST_PAGE));
+
 // ---- serve the PWA (everything not matched above) ----
 // Keep the app shell and the push assets out of any edge/browser cache, so a
 // new service worker or bootstrap reaches the installed PWA immediately instead
 // of being pinned for hours behind Cloudflare's default static cache.
-const NO_STORE = new Set(['/', '/index.html', '/sw.js', '/wabil-push.js', '/manifest.webmanifest']);
+const NO_STORE = new Set(['/', '/index.html', '/sw.js', '/wabil-push.js', '/manifest.webmanifest', '/digest']);
 app.use('*', async (c, next) => {
   await next();
   if (NO_STORE.has(c.req.path)) c.header('Cache-Control', 'no-store');

@@ -65,10 +65,10 @@ function inMorningWindow(): boolean {
   return h >= config.watchMorningHour && h < config.watchMorningHour + MORNING_WINDOW_HOURS;
 }
 
-// Same-origin so the poke opens wabil itself. iOS web push won't open an
-// out-of-scope link; the msg param is there for a future in-app email view.
-function pokeUrl(id: string): string {
-  return `/?msg=${id}`;
+// Same-origin so the poke opens wabil itself (iOS web push won't open an
+// out-of-scope link). A tap lands on the morning digest, the catch-up view.
+function pokeUrl(): string {
+  return '/digest';
 }
 
 function extractJson(s: string): unknown {
@@ -129,7 +129,7 @@ export async function tick(): Promise<TickResult> {
         seen.put(m.id, {
           status: 'pending',
           decision: d.decision,
-          poke: { title: d.title || 'wabil', body: d.body || m.subject, url: pokeUrl(m.id) },
+          poke: { title: d.title || 'wabil', body: d.body || m.subject, url: pokeUrl() },
           subject: m.subject,
           from: m.from,
           classifiedAt: Date.now(),

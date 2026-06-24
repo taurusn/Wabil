@@ -23,3 +23,6 @@ export const EXECUTION_PROMPT = raw('execution.md');
 // The inbox-classifier prompt the watcher runs over each new email to decide
 // notify-now / hold-till-morning / ignore, and to compose the poke in voice.
 export const WATCHER_PROMPT = raw('watcher.md');
+
+// The morning-digest prompt: turn a list of recent emails into a calm catch-up.
+export const DIGEST_PROMPT = raw('digest.md');
