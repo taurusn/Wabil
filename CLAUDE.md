@@ -51,15 +51,19 @@ restriction). Trade-offs accepted: web not native, one manual add-to-home-screen
 no silent/background data push (pokes are visible by design). Win: no re-sign
 treadmill — install once, pokes keep working.
 
-A prior React Native app was built then superseded by this pivot. It still lives
-on disk at `app/` but is **gitignored** and not part of this repo.
+**The web app IS the React Native app.** The face is one Expo (React Native)
+codebase in `app/`; the web build is produced with `npm run build:web` (Expo web
+export + a small post-patch) and the server serves the resulting `app/dist/`.
+There is no separate hand-written web UI — that was tried and removed so the two
+can't drift. On a phone the same code runs full-screen; on desktop the patch
+frames it as a centered phone.
 
 ## Repo layout
 
 ```
 wabil/
   server/   Node + Hono + TypeScript (ESM, run with tsx). The brain + web server.
-    src/index.ts          Hono app: /chat, /health, web-push routes, serves the PWA.
+    src/index.ts          Hono app: /chat, /health, web-push routes, serves app/dist.
     src/orchestrator.ts   personality agent; only tool is send_message_to_agent.
     src/executionAgent.ts headless worker; Gmail read tools over MCP; 6-step cap.
     src/tools/gmailMcp.ts  GongRzhe Gmail MCP connector; exposes ONLY search_emails + read_email.
@@ -68,15 +72,15 @@ wabil/
     src/anthropic.ts      streaming helper (the SDK rejects non-streaming at high max_tokens).
     src/prompts.ts        loads the raw Poke prompts + appends the runtime note.
     prompts/              orchestrator.xml + execution.md (raw Poke prompts, verbatim).
-  pwa/      The installable web app (no build step, plain HTML/CSS/JS).
-    index.html            chat screen + settings overlay.
-    app.js                chat (POST /chat + sanitize), push-subscribe flow, settings.
-    app.css               nocturnal design tokens.
-    sw.js                 service worker: push + notificationclick handlers.
-    manifest.webmanifest  installability.
-    icons/                orb mark (generated).
-  app/      (gitignored, on disk only) the superseded React Native attempt.
+  app/      The React Native app (Expo SDK 54, TS). The single source of the UI.
+    src/screens|components theme.ts  the real app (Welcome/Connect/Chat/Connections).
+    scripts/patch-web.mjs  post-export: dark page bg + desktop phone frame.
+    dist/   (gitignored) the web build output — `npm run build:web`.
 ```
+
+Note: web push (a real lock-screen poke) is not wired into the app's Connections
+toggle yet — single-user, so it'll use the existing Gmail token rather than a
+multi-device subscription registry. The server push endpoints exist for when it is.
 
 ## Web-push endpoints
 
@@ -93,10 +97,11 @@ That is the function the future watcher will call.
 ## Run + deploy
 
 ```bash
-cd server
-cp .env.example .env     # fill ANTHROPIC_API_KEY; VAPID keys already set on Hatim's copy
+cd app && npm install && npm run build:web   # build the web app → app/dist
+cd ../server
+cp .env.example .env      # fill ANTHROPIC_API_KEY; VAPID keys already set on Hatim's copy
 npm install
-npm start                # API + PWA on http://localhost:8787
+npm start                 # API + serves app/dist on http://localhost:8787
 ```
 
 Chat works over plain HTTP locally. **Web push needs HTTPS and the app added to

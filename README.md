@@ -18,9 +18,9 @@ push channel is how proactive pokes reach the lock screen.
 ```
 wabil/
   server/   Node + Hono + Claude. Orchestrator → execution agent → Gmail MCP.
-            Also serves the PWA and the web-push endpoints.
-  pwa/      The installable web app (nocturnal UI). Chat + settings + push subscribe.
-  app/      (on disk, NOT in this repo) the original React Native attempt, superseded.
+            Also serves the web build and the web-push endpoints.
+  app/      The React Native app (Expo SDK 54). The single source of the UI;
+            `npm run build:web` exports it to app/dist, which the server serves.
 ```
 
 ### Server (`server/`)
@@ -41,10 +41,11 @@ wabil/
 ## Run locally
 
 ```bash
-cd server
+cd app && npm install && npm run build:web   # build the web app → app/dist
+cd ../server
 cp .env.example .env      # fill ANTHROPIC_API_KEY; VAPID keys are pre-generated for the deployed copy
 npm install
-npm start                 # serves API + PWA on http://localhost:8787
+npm start                 # serves API + the web app on http://localhost:8787
 ```
 
 Open `http://localhost:8787`. Chat works over plain HTTP; **web push needs HTTPS**

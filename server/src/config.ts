@@ -16,5 +16,5 @@ export const config = {
   vapidPublic: process.env.VAPID_PUBLIC || '',
   vapidPrivate: process.env.VAPID_PRIVATE || '',
   vapidSubject: process.env.VAPID_SUBJECT || 'mailto:admin@example.com',
-  pwaDir: process.env.PWA_DIR || '../pwa',
+  pwaDir: process.env.PWA_DIR || '../app/dist',
 } as const;

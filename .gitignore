@@ -7,8 +7,9 @@ node_modules/
 !.env.example
 server/data/
 
-# the old React Native attempt — superseded by the PWA, kept on disk only
-/app/
+# build artifacts (the web build is generated from app/ via `npm run build:web`)
+app/dist/
+app/web-build/
 
 # logs / os
 *.log
