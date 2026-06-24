@@ -1,0 +1,22 @@
+# Standalone compose for wabil. It joins SEET's existing docker network so the
+# Cloudflare tunnel (cloudflared, already on seet_default) can route
+# wabil.seet.cloud -> http://wabil:8787 by container name. No ports are
+# published to the host and no nginx change is needed.
+services:
+  wabil:
+    build: .
+    image: wabil
+    container_name: wabil
+    restart: unless-stopped
+    env_file: ./server/.env
+    volumes:
+      # web-push subscriptions persist across restarts
+      - ./server/data:/app/server/data
+      # Gmail MCP OAuth (read-write: the token refreshes itself ~weekly)
+      - /home/ubuntu/.gmail-mcp:/root/.gmail-mcp
+    networks:
+      - seet_default
+
+networks:
+  seet_default:
+    external: true

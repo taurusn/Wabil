@@ -1,0 +1,11 @@
+server/node_modules
+server/.env
+server/data
+app/node_modules
+app/dist
+app/web-build
+**/*.log
+.git
+.gitignore
+prototype
+*.md
