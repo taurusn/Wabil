@@ -27,8 +27,17 @@
 
   async function register() {
     if (!('serviceWorker' in navigator)) return null;
-    if (!swReg) swReg = await navigator.serviceWorker.register('/sw.js?v=2');
+    if (!swReg) swReg = await navigator.serviceWorker.register('/sw.js?v=3');
     return swReg;
+  }
+
+  // The service worker can't navigate an already-open iOS PWA itself, so it asks
+  // the running app to do it. This is what makes a poke tap land on /digest.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      var d = e.data || {};
+      if (d.type === 'wabil:navigate' && d.url) window.location.href = d.url;
+    });
   }
 
   async function currentSub() {
