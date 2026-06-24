@@ -11,17 +11,11 @@ export type ChatMsg = {
   replyToId?: string | null;
 };
 
-export type SendResult = {
-  id: string;
-  ts: number;
-  sessionId: string;
-  reply: string;
-  replyId: string;
-  replyTs: number;
-};
+// The POST only ACKs the user's message now; the reply (or replies, including a
+// follow-up after an "on it") arrive over the SSE stream.
+export type SendAck = { id: string; ts: number; sessionId: string };
 
-/** Send one turn. The server persists it, assembles context, and replies. */
-export async function sendChat(text: string, replyToId?: string | null): Promise<SendResult> {
+export async function sendChat(text: string, replyToId?: string | null): Promise<SendAck> {
   const res = await fetch(`${API_BASE}/chat`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -29,8 +23,16 @@ export async function sendChat(text: string, replyToId?: string | null): Promise
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data?.error || `server ${res.status}`);
-  return data as SendResult;
+  return data as SendAck;
 }
+
+// Live assistant stream. Single global stream (single-user app).
+export type StreamEvent =
+  | { type: 'typing' }
+  | { type: 'bubble'; message: ChatMsg }
+  | { type: 'card'; card: unknown };
+
+export const streamUrl = (): string => `${API_BASE}/stream`;
 
 /** A page of history, oldest-first. Pass `before` (oldest loaded ts) to page up. */
 export async function getHistory(before?: number, limit = 40): Promise<ChatMsg[]> {
