@@ -23,7 +23,11 @@ cpSync(join(webpush, 'icons'), join(dist, 'icons'), { recursive: true });
 
 const head = `
     <style id="wabil-web">
-      html, body { background: #07080c; }
+      html, body { background: #07080c; height: 100%; overscroll-behavior: none; }
+      /* Mobile: bind the app to the VISUAL viewport so the iOS keyboard shrinks
+         the app upward from the bottom (input rides just above the keyboard)
+         instead of scrolling the whole page up. --vvh is kept in sync below. */
+      #root { height: var(--vvh, 100%); }
       @media (min-width: 600px) {
         body { display: flex; align-items: center; justify-content: center; }
         #root {
@@ -43,6 +47,19 @@ const head = `
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="wabil" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <script>
+      (function () {
+        var vv = window.visualViewport;
+        function sync() {
+          document.documentElement.style.setProperty('--vvh', (vv ? vv.height : window.innerHeight) + 'px');
+          window.scrollTo(0, 0); // iOS scrolls the page up on focus — undo it
+        }
+        if (vv) { vv.addEventListener('resize', sync); vv.addEventListener('scroll', sync); }
+        window.addEventListener('resize', sync);
+        window.addEventListener('orientationchange', sync);
+        sync();
+      })();
+    </script>
   </head>`;
 
 let html = readFileSync(indexPath, 'utf8');

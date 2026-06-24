@@ -25,12 +25,7 @@ type Msg =
   | { id: number; kind: 'thinking' };
 
 const SEED: Msg[] = [
-  { id: 1, kind: 'statement', text: "tonight's quiet.", dim: 'nothing urgent.' },
-  { id: 2, kind: 'me', text: 'good. thanks' },
-  { id: 3, kind: 'prose', text: "one email from sara came in. it can wait till morning, so i'm holding it." },
-  { id: 4, kind: 'me', text: 'what did she say?' },
-  { id: 5, kind: 'pill', subject: 'Sara · re: friday plans' },
-  { id: 6, kind: 'prose', text: 'she’s asking if 7pm still works. no rush, she said whenever.' },
+  { id: 1, kind: 'statement', text: 'hey.', dim: 'ask me anything about your inbox.' },
 ];
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
@@ -73,7 +68,7 @@ export function ChatScreen({ navigation }: Props) {
         <Pressable style={styles.head} onPress={() => navigation.navigate('Connections')}>
           <Orb size={13} />
           <Text style={styles.name}>
-            Untitled<Text style={styles.nameDim}> · listening</Text>
+            wabil<Text style={styles.nameDim}> · listening</Text>
           </Text>
         </Pressable>
 

@@ -9,6 +9,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { color, font, radius } from '../theme';
 
 // Wrap any message so it fades + rises on mount (280ms).
@@ -91,8 +92,10 @@ export function InputBar({ onSend }: { onSend?: (text: string) => void }) {
         onSubmitEditing={submit}
         returnKeyType="send"
       />
-      <Pressable onPress={submit} hitSlop={10}>
-        <Text style={styles.send}>◍</Text>
+      <Pressable onPress={submit} hitSlop={10} style={({ pressed }) => pressed && { opacity: 0.85 }}>
+        <LinearGradient colors={[color.btnGradA, color.btnGradB]} style={styles.sendBtn}>
+          <Text style={styles.sendIcon}>↑</Text>
+        </LinearGradient>
       </Pressable>
     </View>
   );
@@ -140,14 +143,26 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 11,
+    gap: 8,
     borderWidth: 1,
     borderColor: 'rgba(130,160,210,0.16)',
     borderRadius: radius.field,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 7,
+    paddingLeft: 18,
+    paddingRight: 7,
     backgroundColor: color.surfaceSoft,
   },
-  input: { flex: 1, fontFamily: font.light, fontSize: 14, color: color.textPrimary, padding: 0 },
-  send: { color: color.accentGlow, fontSize: 16 },
+  input: { flex: 1, fontFamily: font.light, fontSize: 15, color: color.textPrimary, padding: 0 },
+  sendBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: color.glowBlue,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+  },
+  sendIcon: { color: color.white, fontSize: 17, fontFamily: font.semibold, lineHeight: 20 },
 });
