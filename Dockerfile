@@ -15,6 +15,9 @@ RUN npm i -g @gongrzhe/server-gmail-autoauth-mcp@latest
 
 WORKDIR /app/server
 
+# Toolchain for native modules (better-sqlite3 compiles against musl on alpine).
+RUN apk add --no-cache python3 make g++
+
 # Install deps first for layer caching. tsx is a devDependency and `npm start`
 # runs the TypeScript directly, so install all deps (no --omit=dev).
 COPY server/package*.json /app/server/
