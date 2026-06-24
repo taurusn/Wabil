@@ -3,9 +3,13 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 // Connector: the GongRzhe Gmail MCP server (@gongrzhe/server-gmail-autoauth-mcp),
-// spawned over stdio. We expose ONLY read tools to the agent so v1 stays
-// read-only in behavior regardless of the OAuth token scope.
-const READ_ONLY = new Set(['search_emails', 'read_email']);
+// spawned over stdio. We expose a deliberate subset of its tools:
+//  - read:  search + read (look at the inbox)
+//  - write: draft (save to Gmail Drafts) + send (deliver)
+// Sending is high-stakes; the orchestrator gates it behind a verbatim draft +
+// the user's explicit approval (see prompts/execution.md). We never expose
+// modify/delete/labels/filters — those stay off regardless of token scope.
+const ALLOWED = new Set(['search_emails', 'read_email', 'draft_email', 'send_email']);
 
 let clientPromise: Promise<Client> | null = null;
 
@@ -29,13 +33,13 @@ async function getClient(): Promise<Client> {
 
 let toolsCache: Anthropic.Tool[] | null = null;
 
-/** The read-only Gmail tools, in Anthropic tool shape. */
+/** The allowed Gmail tools (read + draft/send), in Anthropic tool shape. */
 export async function getGmailTools(): Promise<Anthropic.Tool[]> {
   if (toolsCache) return toolsCache;
   const client = await getClient();
   const { tools } = await client.listTools();
   toolsCache = tools
-    .filter((t) => READ_ONLY.has(t.name))
+    .filter((t) => ALLOWED.has(t.name))
     .map((t) => ({
       name: t.name,
       description: t.description ?? '',
@@ -46,7 +50,7 @@ export async function getGmailTools(): Promise<Anthropic.Tool[]> {
 
 /** Call a Gmail tool through the MCP server; return its text result. */
 export async function callGmailTool(name: string, input: Record<string, unknown>): Promise<string> {
-  if (!READ_ONLY.has(name)) return `error: "${name}" is not permitted (read-only v1)`;
+  if (!ALLOWED.has(name)) return `error: "${name}" is not permitted`;
   const client = await getClient();
   const res: any = await client.callTool({ name, arguments: input });
   const text = (res?.content ?? [])

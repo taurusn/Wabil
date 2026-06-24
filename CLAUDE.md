@@ -114,11 +114,15 @@ HTTPS (Caddy + Let's Encrypt). Then add to home screen, turn on Pokes, hit
 
 ## Gmail connector
 
-GongRzhe `@gongrzhe/server-gmail-autoauth-mcp`, spawned over stdio. Read-only is
-enforced at the tool boundary (only `search_emails` + `read_email` are exposed),
-regardless of the OAuth token scope. OAuth lives at `~/.gmail-mcp/` on the host
-(`gcp-oauth.keys.json` + `credentials.json`). The testing-mode refresh token
-expires every 7 days unless the Google app is published.
+GongRzhe `@gongrzhe/server-gmail-autoauth-mcp`, spawned over stdio. The tool
+boundary (`gmailMcp.ts` `ALLOWED` set) exposes exactly four tools regardless of
+the OAuth token scope: `search_emails`, `read_email` (read), and `draft_email`,
+`send_email` (write). modify/delete/labels/filters stay off. Sending is gated:
+the orchestrator's Poke prompt requires a verbatim draft + the user's explicit
+approval, and the execution prompt prefers `draft_email` unless approval is
+clear. OAuth lives at `~/.gmail-mcp/` on the host (`gcp-oauth.keys.json` +
+`credentials.json`). The testing-mode refresh token expires every 7 days unless
+the Google app is published.
 
 ## What is done / what is next
 
@@ -152,7 +156,8 @@ Next, in order:
 
 - Never commit secrets. `.env`, `server/data/`, and `~/.gmail-mcp/` are out of
   git. VAPID public key is meant to be public; the private key is not.
-- Gmail access is read-only at the tool layer. Keep it that way unless Hatim
-  explicitly adds a write capability behind a confirmation gate.
+- Gmail can read, draft, and send (the four `ALLOWED` tools). Sending is
+  high-stakes: keep it behind the orchestrator's verbatim-draft-and-approve gate.
+  Do not widen to modify/delete/labels/filters without Hatim's explicit say.
 - The GitHub repo `taurusn/Wabil` may be public — do not push anything that
   assumes privacy. Check before adding sensitive context.
