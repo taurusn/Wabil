@@ -159,7 +159,8 @@ const styles = StyleSheet.create({
     paddingRight: 7,
     backgroundColor: color.surfaceSoft,
   },
-  input: { flex: 1, fontFamily: font.light, fontSize: 15, color: color.textPrimary, padding: 0 },
+  // 16px (not less) so iOS Safari doesn't auto-zoom the page when the field is focused.
+  input: { flex: 1, fontFamily: font.light, fontSize: 16, color: color.textPrimary, padding: 0 },
   sendBtn: {
     width: 36,
     height: 36,
