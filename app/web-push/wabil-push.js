@@ -27,7 +27,7 @@
 
   async function register() {
     if (!('serviceWorker' in navigator)) return null;
-    if (!swReg) swReg = await navigator.serviceWorker.register('/sw.js');
+    if (!swReg) swReg = await navigator.serviceWorker.register('/sw.js?v=2');
     return swReg;
   }
 

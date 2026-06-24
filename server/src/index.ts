@@ -92,6 +92,15 @@ app.post('/watch/tick', async (c) => {
 });
 
 // ---- serve the PWA (everything not matched above) ----
+// Keep the app shell and the push assets out of any edge/browser cache, so a
+// new service worker or bootstrap reaches the installed PWA immediately instead
+// of being pinned for hours behind Cloudflare's default static cache.
+const NO_STORE = new Set(['/', '/index.html', '/sw.js', '/wabil-push.js', '/manifest.webmanifest']);
+app.use('*', async (c, next) => {
+  await next();
+  if (NO_STORE.has(c.req.path)) c.header('Cache-Control', 'no-store');
+});
+
 app.get('/', serveStatic({ path: `${config.pwaDir}/index.html` }));
 app.use('/*', serveStatic({ root: config.pwaDir }));
 

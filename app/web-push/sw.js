@@ -20,13 +20,32 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/';
+
+  // iOS web push only opens same-origin URLs from an installed PWA. Coerce any
+  // out-of-scope link (e.g. an external mail link) to a same-origin path so the
+  // click always lands inside wabil instead of doing nothing.
+  const raw = (event.notification.data && event.notification.data.url) || '/';
+  let target = '/';
+  try {
+    const u = new URL(raw, self.location.origin);
+    if (u.origin === self.location.origin) target = u.pathname + u.search + u.hash;
+  } catch {}
+
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    (async () => {
+      const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       for (const c of list) {
-        if ('focus' in c) return c.focus();
+        if (!c.url) continue;
+        try {
+          if (new URL(c.url).origin !== self.location.origin) continue;
+        } catch { continue; }
+        await c.focus();
+        if (target !== '/' && 'navigate' in c) {
+          try { await c.navigate(target); } catch {}
+        }
+        return;
       }
-      if (self.clients.openWindow) return self.clients.openWindow(url);
-    })
+      if (self.clients.openWindow) await self.clients.openWindow(target);
+    })()
   );
 });

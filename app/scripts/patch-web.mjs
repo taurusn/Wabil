@@ -53,7 +53,7 @@ if (!html.includes('id="wabil-web"')) {
   changed = true;
 }
 if (!html.includes('wabil-push.js')) {
-  html = html.replace('</body>', '    <script src="/wabil-push.js" defer></script>\n  </body>');
+  html = html.replace('</body>', '    <script src="/wabil-push.js?v=2" defer></script>\n  </body>');
   changed = true;
 }
 
