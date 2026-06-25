@@ -19,29 +19,26 @@ const cleanPiece = (s: string): string =>
     .trim();
 
 /**
- * Split a raw orchestrator reply into chat bubbles, the way Poke fires off
- * several short texts: `<block>…</block>` stays a single bubble; everything else
- * splits on blank lines. `<aside>` private reasoning is dropped. Returns clean
- * bubble strings in order.
+ * Split a raw orchestrator reply into chat bubbles — conservatively. A few
+ * genuinely SHORT, distinct lines read like someone firing off a couple of
+ * texts, so those stay separate. Anything longer is a real answer and stays ONE
+ * bubble instead of being chopped into a wall. `<aside>` is dropped; `<block>`
+ * tags are unwrapped (their content kept together).
  */
+const MAX_BUBBLES = 3;
+const SHORT = 160; // roughly a text-message length
+
 export function splitBubbles(raw: string): string[] {
-  const noAside = String(raw).replace(/<aside>[\s\S]*?<\/aside>/gi, '');
-  const bubbles: string[] = [];
-  const pushPlain = (s: string) => {
-    for (const p of s.split(/\n{2,}/)) {
-      const t = cleanPiece(p);
-      if (t) bubbles.push(t);
-    }
-  };
-  const re = /<block>([\s\S]*?)<\/block>/gi;
-  let last = 0;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(noAside)) !== null) {
-    pushPlain(noAside.slice(last, m.index));
-    const block = cleanPiece(m[1]);
-    if (block) bubbles.push(block);
-    last = re.lastIndex;
+  const text = String(raw)
+    .replace(/<aside>[\s\S]*?<\/aside>/gi, '')
+    .replace(/<\/?block>/gi, '');
+  const pieces = text
+    .split(/\n{2,}/)
+    .map(cleanPiece)
+    .filter(Boolean);
+  if (pieces.length <= 1) return pieces;
+  if (pieces.length <= MAX_BUBBLES && pieces.every((p) => p.length <= SHORT)) {
+    return pieces; // a short burst of distinct texts
   }
-  pushPlain(noAside.slice(last));
-  return bubbles;
+  return [pieces.join('\n\n')]; // a real answer: keep it whole
 }
