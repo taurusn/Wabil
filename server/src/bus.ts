@@ -26,6 +26,19 @@ export type ChoiceCard = {
 type Subscriber = (e: StreamEvent) => void;
 const subscribers = new Set<Subscriber>();
 
+// Presence: the app heartbeats "I'm on-screen" while visible and fires an
+// immediate "I'm gone" on background. We push only when the app is NOT present.
+// This replaces guessing from the SSE socket, which lingers after the app closes
+// (the reason a closed-app reply was delivered silently with no notification).
+const PRESENCE_WINDOW_MS = 15000;
+let lastActiveAt = 0;
+export function setPresence(active: boolean): void {
+  lastActiveAt = active ? Date.now() : 0;
+}
+function appPresent(): boolean {
+  return Date.now() - lastActiveAt < PRESENCE_WINDOW_MS;
+}
+
 export function subscribe(fn: Subscriber): () => void {
   subscribers.add(fn);
   return () => {
@@ -68,7 +81,10 @@ export function emitBubble(message: {
   sessionId: string;
 }): void {
   broadcast({ type: 'bubble', message: { ...message, role: 'assistant' } });
-  if (subscribers.size === 0) {
+  // Push whenever the app isn't on-screen. When it IS, the live stream above
+  // delivers it. Since the server only pushes when the app is genuinely absent,
+  // the service worker can always show the notification (no silent-push games).
+  if (!appPresent()) {
     const body = message.content.replace(/\s+/g, ' ').trim().slice(0, 140);
     sendPoke({
       title: 'wabil',

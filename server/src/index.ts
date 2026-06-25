@@ -24,6 +24,7 @@ const app = new Hono();
 app.use('/health', cors());
 app.use('/chat', cors());
 app.use('/stream', cors());
+app.use('/presence', cors());
 app.use('/history', cors());
 app.use('/vapidPublicKey', cors());
 app.use('/subscribe', cors());
@@ -72,6 +73,12 @@ app.post('/chat', async (c) => {
     console.error('[chat] error:', err?.message || err);
     return c.json({ error: err?.message || 'orchestrator failed' }, 500);
   }
+});
+
+// ---- presence: the app says whether it's on-screen, so we know when to push ----
+app.post('/presence', (c) => {
+  bus.setPresence(c.req.query('active') !== 'false');
+  return c.json({ ok: true });
 });
 
 // ---- chat history (pagination: ?limit, ?before=<ts cursor>) ----

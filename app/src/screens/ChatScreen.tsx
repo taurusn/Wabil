@@ -7,7 +7,16 @@ import { Orb } from '../components/Orb';
 import { AssistantProse, InputBar, MessageIn, Quoted, SessionDivider, ThinkingDots, UserBubble } from '../components/chat';
 import { color, font, space } from '../theme';
 import type { RootStackParamList } from '../types';
-import { getHistory, sanitize, sendChat, streamUrl, type ChatMsg, type StreamEvent } from '../api';
+import {
+  beaconInactive,
+  getHistory,
+  pingPresence,
+  sanitize,
+  sendChat,
+  streamUrl,
+  type ChatMsg,
+  type StreamEvent,
+} from '../api';
 
 const PAGE = 40;
 const GAP_MS = 5 * 60 * 60 * 1000;
@@ -119,6 +128,27 @@ export function ChatScreen({ navigation }: Props) {
     };
     return () => es.close();
   }, [drain]);
+
+  // Presence heartbeat: while the app is on-screen, tell the server every few
+  // seconds; the moment it backgrounds, fire an immediate "gone" beacon. The
+  // server pushes replies only when we're absent.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const beat = () => {
+      if (document.visibilityState === 'visible') pingPresence(true);
+    };
+    beat();
+    const iv = setInterval(beat, 8000);
+    const onVis = () => (document.visibilityState === 'visible' ? pingPresence(true) : beaconInactive());
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('pagehide', beaconInactive);
+    return () => {
+      clearInterval(iv);
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('pagehide', beaconInactive);
+      beaconInactive();
+    };
+  }, []);
 
   const findById = useCallback((id?: string | null) => (id ? msgs.find((m) => m.id === id) : undefined), [msgs]);
 

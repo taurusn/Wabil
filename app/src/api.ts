@@ -34,6 +34,26 @@ export type StreamEvent =
 
 export const streamUrl = (): string => `${API_BASE}/stream`;
 
+// Presence: tell the server whether the app is on-screen, so it knows when to
+// push a reply (when we're gone) vs just stream it (when we're here).
+export function pingPresence(active: boolean): void {
+  try {
+    fetch(`${API_BASE}/presence?active=${active}`, { method: 'POST', keepalive: true }).catch(() => {});
+  } catch {
+    /* ignore */
+  }
+}
+
+export function beaconInactive(): void {
+  try {
+    const url = `${API_BASE}/presence?active=false`;
+    if (typeof navigator !== 'undefined' && navigator.sendBeacon) navigator.sendBeacon(url);
+    else fetch(url, { method: 'POST', keepalive: true }).catch(() => {});
+  } catch {
+    /* ignore */
+  }
+}
+
 /** A page of history, oldest-first. Pass `before` (oldest loaded ts) to page up. */
 export async function getHistory(before?: number, limit = 40): Promise<ChatMsg[]> {
   const q = new URLSearchParams({ limit: String(limit) });
