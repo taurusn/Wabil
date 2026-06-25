@@ -2,19 +2,45 @@ import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, {
   Easing,
-  FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
   withRepeat,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { color, font, radius } from '../theme';
 
-// Wrap any message so it fades + rises on mount (280ms).
-export function Appear({ children }: { children: React.ReactNode }) {
-  return <Animated.View entering={FadeInDown.duration(280).easing(Easing.out(Easing.ease))}>{children}</Animated.View>;
+// Spring a newly-arrived bubble in exactly like iMessage: the bubble INFLATES
+// from its bottom corner (by the tail) with a lightly-bouncy spring. Matches the
+// reference spring (stiffness 200, mass 0.2, damping 20). Only the FIRST
+// appearance animates (tracked in `seen`), so history + scroll never re-animate.
+export function MessageIn({
+  id,
+  seen,
+  align = 'left',
+  children,
+}: {
+  id: string;
+  seen: Set<string>;
+  align?: 'left' | 'right';
+  children: React.ReactNode;
+}) {
+  const p = useSharedValue(seen.has(id) ? 1 : 0);
+  useEffect(() => {
+    if (!seen.has(id)) {
+      seen.add(id);
+      p.value = withSpring(1, { stiffness: 200, mass: 0.2, damping: 20 });
+    }
+  }, []);
+  const style = useAnimatedStyle(() => ({
+    opacity: Math.min(1, p.value * 2.2),
+    transform: [{ scale: 0.6 + 0.4 * p.value }],
+  }));
+  // Anchor the inflate at the bottom corner where the tail is.
+  const origin = align === 'right' ? 'bottom right' : 'bottom left';
+  return <Animated.View style={[{ transformOrigin: origin }, style]}>{children}</Animated.View>;
 }
 
 export function AssistantStatement({ text, dim }: { text: string; dim?: string }) {
@@ -51,25 +77,35 @@ export function EmailPill({ subject }: { subject: string }) {
   );
 }
 
+// iMessage-style typing indicator: a left-aligned pill that pops in, with three
+// dots doing a staggered wave.
 export function ThinkingDots() {
+  const p = useSharedValue(0);
+  useEffect(() => {
+    p.value = withSpring(1, { stiffness: 200, mass: 0.2, damping: 20 });
+  }, []);
+  const pop = useAnimatedStyle(() => ({
+    opacity: Math.min(1, p.value * 2.2),
+    transform: [{ scale: 0.6 + 0.4 * p.value }],
+  }));
   return (
-    <View style={styles.thinking}>
+    <Animated.View style={[styles.typing, { transformOrigin: 'bottom left' }, pop]}>
       {[0, 1, 2].map((i) => (
         <Dot key={i} index={i} />
       ))}
-    </View>
+    </Animated.View>
   );
 }
 
 function Dot({ index }: { index: number }) {
-  const t = useSharedValue(0.25);
+  const t = useSharedValue(0.35);
   useEffect(() => {
     t.value = withDelay(
       index * 160,
-      withRepeat(withTiming(0.95, { duration: 500, easing: Easing.inOut(Easing.ease) }), -1, true),
+      withRepeat(withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) }), -1, true),
     );
   }, [t, index]);
-  const s = useAnimatedStyle(() => ({ opacity: t.value, transform: [{ translateY: -3 * (t.value - 0.25) }] }));
+  const s = useAnimatedStyle(() => ({ opacity: t.value, transform: [{ scale: 0.7 + 0.4 * t.value }] }));
   return <Animated.View style={[styles.dot, s]} />;
 }
 
@@ -187,8 +223,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     overflow: 'hidden',
   },
-  thinking: { flexDirection: 'row', gap: 6, paddingLeft: 2, paddingVertical: 4 },
-  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: color.accentGlow },
+  typing: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: color.surfaceSoft,
+    borderWidth: 1,
+    borderColor: color.hairline,
+    borderRadius: 16,
+    borderBottomLeftRadius: 5,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+  },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: color.textSecondary },
   field: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Background } from '../components/Background';
 import { Orb } from '../components/Orb';
-import { AssistantProse, InputBar, Quoted, SessionDivider, ThinkingDots, UserBubble } from '../components/chat';
+import { AssistantProse, InputBar, MessageIn, Quoted, SessionDivider, ThinkingDots, UserBubble } from '../components/chat';
 import { color, font, space } from '../theme';
 import type { RootStackParamList } from '../types';
 import { getHistory, sanitize, sendChat, streamUrl, type ChatMsg, type StreamEvent } from '../api';
@@ -38,8 +38,12 @@ export function ChatScreen({ navigation }: Props) {
   const sending = useRef(false);
   const queue = useRef<ChatMsg[]>([]); // streamed bubbles waiting to be revealed
   const draining = useRef(false);
+  const animSeen = useRef<Set<string>>(new Set()); // ids that have already animated in
 
   const clean = (list: ChatMsg[]) => list.map((m) => ({ ...m, content: sanitize(m.content) }));
+  // History + paginated messages should appear instantly; only live-streamed
+  // bubbles spring in. Mark loaded ids as already-seen.
+  const markSeen = (list: ChatMsg[]) => list.forEach((m) => animSeen.current.add(m.id));
 
   // Add a message, deduped by id, kept in ts order.
   const addMsg = useCallback((m: ChatMsg) => {
@@ -52,12 +56,13 @@ export function ChatScreen({ navigation }: Props) {
     if (draining.current) return;
     draining.current = true;
     while (queue.current.length) {
-      setThinking(true);
       const next = queue.current[0];
-      await sleep(Math.min(950, 380 + next.content.length * 7));
+      setThinking(true); // dots = a message is landing right now (not "busy")
+      await sleep(Math.min(900, 360 + next.content.length * 6));
+      setThinking(false);
       queue.current.shift();
       addMsg({ ...next, content: sanitize(next.content) });
-      setThinking(queue.current.length > 0);
+      if (queue.current.length) await sleep(220); // a beat between texts
     }
     draining.current = false;
   }, [addMsg]);
@@ -66,6 +71,7 @@ export function ChatScreen({ navigation }: Props) {
   useEffect(() => {
     getHistory()
       .then((h) => {
+        markSeen(h);
         setMsgs(clean(h));
         if (h.length < PAGE) setReachedStart(true);
       })
@@ -86,8 +92,9 @@ export function ChatScreen({ navigation }: Props) {
       } catch {
         return;
       }
-      if (e.type === 'typing') setThinking(true);
-      else if (e.type === 'bubble') {
+      // 'typing' is ignored on purpose: dots are a per-bubble reveal, driven
+      // locally when a real bubble arrives — never a backend-busy spinner.
+      if (e.type === 'bubble') {
         queue.current.push(e.message);
         drain();
       }
@@ -100,6 +107,7 @@ export function ChatScreen({ navigation }: Props) {
       }
       getHistory()
         .then((h) => {
+          markSeen(h);
           setMsgs((cur) => {
             const have = new Set(cur.map((m) => m.id));
             const merged = [...cur, ...clean(h).filter((m) => !have.has(m.id))];
@@ -119,6 +127,7 @@ export function ChatScreen({ navigation }: Props) {
     setLoadingMore(true);
     try {
       const older = clean(await getHistory(msgs[0].ts, PAGE));
+      markSeen(older);
       setMsgs((cur) => {
         const have = new Set(cur.map((m) => m.id));
         const fresh = older.filter((m) => !have.has(m.id));
@@ -148,9 +157,10 @@ export function ChatScreen({ navigation }: Props) {
       replyToId: rTo?.id ?? null,
     };
     setMsgs((m) => [...m, optimistic]);
-    setThinking(true);
+    // No dots on send: the dots only flash right before a real bubble lands.
     try {
       const ack = await sendChat(text, rTo?.id);
+      animSeen.current.add(ack.id); // the temp bubble already popped; don't re-animate on the id swap
       setMsgs((m) => m.map((x) => (x.id === tempId ? { ...x, id: ack.id, ts: ack.ts, sessionId: ack.sessionId } : x)));
     } catch {
       setThinking(false);
@@ -196,8 +206,17 @@ export function ChatScreen({ navigation }: Props) {
       <View>
         {newSession ? <SessionDivider label={dividerLabel(m.ts)} /> : null}
         <Pressable onLongPress={() => setReplyTo(m)} delayLongPress={300}>
-          {quote}
-          {m.role === 'user' ? <UserBubble>{m.content}</UserBubble> : <AssistantProse>{m.content}</AssistantProse>}
+          {m.role === 'user' ? (
+            <MessageIn id={m.id} seen={animSeen.current} align="right">
+              {quote}
+              <UserBubble>{m.content}</UserBubble>
+            </MessageIn>
+          ) : (
+            <MessageIn id={m.id} seen={animSeen.current}>
+              {quote}
+              <AssistantProse>{m.content}</AssistantProse>
+            </MessageIn>
+          )}
         </Pressable>
       </View>
     );

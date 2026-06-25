@@ -39,7 +39,7 @@ export default function App() {
       <StatusBar style="light" />
       <NavigationContainer theme={navTheme}>
         <Stack.Navigator
-          initialRouteName="Welcome"
+          initialRouteName="Chat"
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: color.bgBase },

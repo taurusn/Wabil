@@ -3,7 +3,8 @@ import { runTurn, textOf } from './anthropic.js';
 import { WATCHER_PROMPT } from './prompts.js';
 import { composePoke } from './voice.js';
 import { callGmailTool } from './tools/gmailMcp.js';
-import { sendPoke, subscriptionCount } from './push.js';
+import { subscriptionCount } from './push.js';
+import * as runtime from './runtime.js';
 import * as seen from './seen.js';
 
 // The watcher brain: poll Gmail on an interval, classify each new email
@@ -167,23 +168,22 @@ export async function tick(): Promise<TickResult> {
     }
   }
 
-  // Deliver due pokes. Claim the key as 'poked' only AFTER a successful push.
+  // Deliver due pokes as CHAT MESSAGES (wabil texting you). deliverProactive
+  // persists the bubble and streams it live, or pushes when the app is closed —
+  // tapping the notification opens the chat with the poke sitting in it. Claim
+  // the key as 'poked' only AFTER delivery.
   let pending = 0;
   for (const [id, rec] of seen.entries()) {
     if (rec.status !== 'pending' || !rec.poke) continue;
     const due = rec.decision === 'now' || (rec.decision === 'morning' && inMorningWindow());
-    if (!due || subscriptionCount() === 0) {
+    if (!due) {
       pending++;
       continue;
     }
     try {
-      const sent = await sendPoke(rec.poke);
-      if (sent > 0) {
-        seen.put(id, { ...rec, status: 'poked', pokedAt: Date.now() });
-        poked++;
-      } else {
-        pending++;
-      }
+      runtime.deliverProactive(rec.poke.body);
+      seen.put(id, { ...rec, status: 'poked', pokedAt: Date.now() });
+      poked++;
     } catch (e: any) {
       errors.push(`poke ${id}: ${e?.message || e}`);
       pending++;

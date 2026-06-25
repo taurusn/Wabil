@@ -97,7 +97,10 @@ function onAgentResult(sessionId: string, name: string, result: string): void {
 
 async function runLoop(sessionId: string): Promise<void> {
   const s = getSession(sessionId);
-  bus.emitTyping();
+  // No "typing" signal here: the dots are a per-bubble reveal animation on the
+  // client, not a busy indicator. While the backend iterates, the user sees
+  // nothing (the "on it" ack carries the working signal). Dots flash only just
+  // before each real bubble lands.
   for (let step = 0; step < MAX_STEPS; step++) {
     const msg = await runTurn({ system: ORCHESTRATOR_PROMPT, messages: s.transcript, tools: TOOLS });
     s.transcript.push({ role: 'assistant', content: msg.content });
@@ -134,6 +137,21 @@ async function runLoop(sessionId: string): Promise<void> {
     if (yieldTurn) return; // stop; resume when an agent reports back
   }
   console.warn(`[runtime] session ${sessionId.slice(0, 8)} hit the step limit`);
+}
+
+/**
+ * Deliver a PROACTIVE message (a watcher poke) into the conversation — wabil
+ * texting the user unprompted. It's persisted as an assistant message and
+ * emitted like any reply: streamed to the open app, or pushed when it's closed.
+ * So a poke shows up as a normal chat bubble and the notification opens the chat.
+ */
+export function deliverProactive(text: string): void {
+  const m = store.addMessage({ role: 'assistant', content: text });
+  bus.emitBubble({ id: m.id, content: m.content, ts: m.ts, sessionId: m.sessionId });
+  // Keep the in-memory transcript consistent if that session is active, so a
+  // reply to the poke ("yeah handle it") has the poke in context.
+  const s = sessions.get(m.sessionId);
+  if (s) s.transcript.push({ role: 'assistant', content: text });
 }
 
 /**
