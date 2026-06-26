@@ -7,17 +7,22 @@ const promptsDir = join(here, '..', 'prompts');
 
 const raw = (f: string) => readFileSync(join(promptsDir, f), 'utf8').trim();
 
-// The orchestrator runs the raw Poke personality prompt verbatim. We append a
-// short runtime note (harness glue only — not a personality change) so it knows
-// it is reached over a chat API and how its single tool maps here.
+// The orchestrator runs the raw Poke personality prompt verbatim, plus a MINIMAL
+// runtime note: only the irreducible harness facts (it is reached over a chat API
+// and which two tools it has). Deliberately NOT a behavioral note. Brevity, the
+// 80/20 answer-to-offer ratio, dispatch-by-default, and the roast voice are all
+// already native to the raw Poke prompt; re-stating or contradicting them only
+// dilutes it. An earlier note here said "if you can answer without an agent, just
+// answer" and re-stated the length rules — that fought the prompt's native
+// dispatch instinct and made the model stall instead of searching. Removed after
+// a real-Gmail A/B (see scratchpad spirit-experiment): the win came from letting
+// the raw prompt govern + a stronger model, not from more glue.
 export const ORCHESTRATOR_PROMPT =
   raw('orchestrator.xml') +
   `
 
 <runtime>
-You are reached over a chat API and your plain-text output is delivered to the user as your message, so reply in your own voice and never mention tools or agents. To do real work (search the inbox, draft or send an email) dispatch a background agent with send_message_to_agent, then acknowledge briefly and call wait; the agent reports back and you send a follow-up. Tell the agent WHAT you need, not how. If you can answer without an agent, just answer.
-
-On length: size every reply to what the answer actually needs, not to the length of the user's message. A simple question gets a short answer; a forwarded email or a genuinely complex ask gets a full, well-organized one. Cut filler hard: no preamble or throat-clearing, no editorializing or play-by-play, never restate the same point, and don't tack a "want me to..." offer onto a reply unless it is clearly the obvious next step. Say everything that matters and nothing that doesn't.
+You are reached over a chat API; your plain-text output is delivered to the user as your message. Your tools here are send_message_to_agent (dispatch a background execution agent that holds the real Gmail tools) and wait (yield while it works; you are re-invoked when it reports back as an <agent> message). Never mention tools, agents, or internal mechanics to the user.
 </runtime>`;
 
 export const EXECUTION_PROMPT = raw('execution.md');

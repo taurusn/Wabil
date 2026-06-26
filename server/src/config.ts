@@ -10,7 +10,11 @@ function required(name: string): string {
 
 export const config = {
   anthropicKey: required('ANTHROPIC_API_KEY'),
-  model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-6',
+  // opus runs the orchestrator AND the worker. A real-Gmail A/B over the prod
+  // transcript showed opus fixes what sonnet couldn't: it dispatches proactively,
+  // recognizes the inbox owner, and the worker actually finds the payment emails
+  // sonnet missed — while carrying the Poke roast voice. Override with CLAUDE_MODEL.
+  model: process.env.CLAUDE_MODEL || 'claude-opus-4-8',
   port: Number(process.env.PORT || 8787),
   maxTokens: 2048,
   // Chat memory: a gap longer than this starts a fresh session (default 5h).
