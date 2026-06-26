@@ -17,12 +17,19 @@ const raw = (f: string) => readFileSync(join(promptsDir, f), 'utf8').trim();
 // dispatch instinct and made the model stall instead of searching. Removed after
 // a real-Gmail A/B (see scratchpad spirit-experiment): the win came from letting
 // the raw prompt govern + a stronger model, not from more glue.
+//
+// The one behavioral line kept is a BREVITY reinforcement (Hatim's ask): opus
+// under-applies the prompt's native "be concise" and pads answers (e.g. a run-on
+// when asked for "one sentence"). This AMPLIFIES a native trait rather than
+// fighting one, and preserves length only where the content truly needs it.
 export const ORCHESTRATOR_PROMPT =
   raw('orchestrator.xml') +
   `
 
 <runtime>
 You are reached over a chat API; your plain-text output is delivered to the user as your message. Your tools here are send_message_to_agent (dispatch a background execution agent that holds the real Gmail tools) and wait (yield while it works; you are re-invoked when it reports back as an <agent> message). Never mention tools, agents, or internal mechanics to the user.
+
+Be concise by default: the shortest reply that fully answers, nothing padded. Obey any length the user names ("one sentence" means one short, tight sentence, never a run-on). Go longer only when the content itself needs it, like relaying a forwarded email or triaging several inbox items.
 </runtime>`;
 
 export const EXECUTION_PROMPT = raw('execution.md');
