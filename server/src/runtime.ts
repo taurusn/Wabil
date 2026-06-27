@@ -77,12 +77,18 @@ function coalesce(rows: { role: store.Role; content: string }[]): Anthropic.Mess
   return out;
 }
 
-// Persist + stream each bubble of an assistant turn.
+// Persist + stream each bubble of an assistant turn. The client reveals them one
+// at a time with a typing beat, so a multi-bubble answer lands like several
+// texts. Push only ONCE for the whole reply (not per bubble) when the app's closed.
 function emitText(sessionId: string, raw: string): void {
-  for (const bubble of splitBubbles(raw)) {
+  const bubbles = splitBubbles(raw);
+  let firstId: string | null = null;
+  for (const bubble of bubbles) {
     const m = store.addMessage({ role: 'assistant', content: bubble, sessionId });
-    bus.emitBubble({ id: m.id, content: m.content, ts: m.ts, sessionId: m.sessionId });
+    bus.streamBubble({ id: m.id, content: m.content, ts: m.ts, sessionId: m.sessionId });
+    if (!firstId) firstId = m.id;
   }
+  if (firstId) bus.pushReplyOnce(firstId, bubbles.join(' '));
 }
 
 function onAgentResult(sessionId: string, name: string, result: string): void {

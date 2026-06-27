@@ -69,10 +69,42 @@ export function emitCard(card: ChoiceCard): void {
 }
 
 /**
- * Deliver an assistant bubble. Live clients get it over SSE. If none are
- * connected, it falls back to a CHAT push — tagged in its own namespace
- * (`wabil-chat-<id>`) so it can never merge with a watcher inbox poke
- * (`wabil-inbox-<id>`), and routed to the chat (`/?m=<id>`), not the digest.
+ * Stream one assistant bubble to live clients over SSE. No push here — a reply
+ * may be several bubbles, and we push once for the whole reply (pushReplyOnce),
+ * not once per bubble.
+ */
+export function streamBubble(message: {
+  id: string;
+  content: string;
+  ts: number;
+  sessionId: string;
+}): void {
+  broadcast({ type: 'bubble', message: { ...message, role: 'assistant' } });
+}
+
+/**
+ * Push ONE chat notification for a reply when the app isn't on-screen. Tagged in
+ * its own namespace (`wabil-chat-<id>`) so it can never merge with a watcher
+ * inbox poke (`wabil-inbox-<id>`), and routed to the chat (`/?m=<id>`), not the
+ * digest. When the app IS present, the live stream delivers the bubbles instead.
+ */
+export function pushReplyOnce(id: string, text: string): void {
+  if (appPresent()) return;
+  const body = text.replace(/\s+/g, ' ').trim().slice(0, 140);
+  sendPoke({
+    title: 'wabil',
+    body: body || 'new message',
+    url: `/?m=${id}`,
+    tag: `wabil-chat-${id}`,
+  }).catch(() => {
+    /* push is best-effort; the message is already persisted + on the stream */
+  });
+}
+
+/**
+ * Deliver a SINGLE assistant bubble (a proactive poke): stream it, and push once
+ * if the app is closed. Multi-bubble chat replies use streamBubble per bubble +
+ * a single pushReplyOnce instead.
  */
 export function emitBubble(message: {
   id: string;
@@ -80,19 +112,6 @@ export function emitBubble(message: {
   ts: number;
   sessionId: string;
 }): void {
-  broadcast({ type: 'bubble', message: { ...message, role: 'assistant' } });
-  // Push whenever the app isn't on-screen. When it IS, the live stream above
-  // delivers it. Since the server only pushes when the app is genuinely absent,
-  // the service worker can always show the notification (no silent-push games).
-  if (!appPresent()) {
-    const body = message.content.replace(/\s+/g, ' ').trim().slice(0, 140);
-    sendPoke({
-      title: 'wabil',
-      body: body || 'new message',
-      url: `/?m=${message.id}`,
-      tag: `wabil-chat-${message.id}`,
-    }).catch(() => {
-      /* push is best-effort; the message is already persisted + on the stream */
-    });
-  }
+  streamBubble(message);
+  pushReplyOnce(message.id, message.content);
 }
