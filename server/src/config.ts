@@ -15,6 +15,13 @@ export const config = {
   // recognizes the inbox owner, and the worker actually finds the payment emails
   // sonnet missed — while carrying the Poke roast voice. Override with CLAUDE_MODEL.
   model: process.env.CLAUDE_MODEL || 'claude-opus-4-8',
+  // Provider switch (orchestrator AND worker share this). Set LLM_PROVIDER=gemini
+  // + CLAUDE_MODEL=gemini-2.5-flash (+ GEMINI_API_KEY) to run Gemini for cost.
+  // Auto-detects gemini if the model id starts with "gemini".
+  provider:
+    process.env.LLM_PROVIDER ||
+    ((process.env.CLAUDE_MODEL || '').startsWith('gemini') ? 'gemini' : 'anthropic'),
+  geminiKey: process.env.GEMINI_API_KEY || '',
   port: Number(process.env.PORT || 8787),
   maxTokens: 2048,
   // Chat memory: a gap longer than this starts a fresh session (default 5h).

@@ -101,6 +101,36 @@ function onAgentResult(sessionId: string, name: string, result: string): void {
   enqueue(s, () => runLoop(sessionId));
 }
 
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+// The "text, then a second text" cadence. After a SHORT reply, ~30% of the time,
+// wait a beat and ask the orchestrator if it wants to fire one more short
+// follow-up — like a person tapping out a quick afterthought. Long replies are
+// never asked. The nudge is not persisted; only a real follow-up joins the
+// transcript (a PASS is dropped).
+const FOLLOWUP_CHANCE = 0.3;
+const FOLLOWUP_MAX_LEN = 140; // only add on to short messages
+async function maybeFollowUp(sessionId: string, prevReply: string): Promise<void> {
+  if (prevReply.length > FOLLOWUP_MAX_LEN) return;
+  if (Math.random() >= FOLLOWUP_CHANCE) return;
+  await sleep(1100); // a human beat before the second text
+  const s = getSession(sessionId);
+  const probe: Anthropic.MessageParam[] = [
+    ...s.transcript,
+    {
+      role: 'user',
+      content:
+        '<system_reminder>You just sent that message. Like a person texting, you MAY fire off one more short follow-up text if something natural fits: a tiny afterthought, a light add-on, or one short question. Keep it short and do not repeat what you just said. If there is nothing genuine to add, reply with exactly: PASS</system_reminder>',
+    },
+  ];
+  const msg = await runTurn({ system: ORCHESTRATOR_PROMPT, messages: probe });
+  const text = textOf(msg);
+  if (text && !/^\s*pass[.!]?\s*$/i.test(text)) {
+    s.transcript.push({ role: 'assistant', content: text });
+    emitText(sessionId, text);
+  }
+}
+
 async function runLoop(sessionId: string): Promise<void> {
   const s = getSession(sessionId);
   // No "typing" signal here: the dots are a per-bubble reveal animation on the
@@ -115,7 +145,10 @@ async function runLoop(sessionId: string): Promise<void> {
     if (text) emitText(sessionId, text);
 
     const calls = toolUses(msg);
-    if (calls.length === 0) return; // a complete answer with no wait
+    if (calls.length === 0) {
+      if (text) await maybeFollowUp(sessionId, text); // sometimes fire a 2nd short text
+      return; // a complete answer with no wait
+    }
 
     const results: Anthropic.ToolResultBlockParam[] = [];
     let yieldTurn = false;

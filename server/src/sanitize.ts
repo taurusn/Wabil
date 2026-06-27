@@ -1,19 +1,29 @@
 // The orchestrator runs the raw Poke prompt, which emits <aside> private
 // reasoning and <block>/link artifacts. Strip them so only clean voiced text is
 // ever stored, returned, or fed back as context. Mirrors the client-side rule.
-export function sanitize(raw: string): string {
-  return String(raw)
-    .replace(/<aside>[\s\S]*?<\/aside>/gi, '')
-    .replace(/<\/?block>/gi, '')
+// Strip Poke link artifacts: the documented `[label](url)` form AND the
+// `<label>(url)` mangling Gemini sometimes emits, plus any leftover bare label.
+const stripLinks = (s: string): string =>
+  s
     .replace(/\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/<[^>\s]+>\([^)]*\)/g, '')
+    .replace(/\(poke\.com\/[^)]*\)/g, '')
+    // bare Poke link labels Gemini leaks as plain text, e.g. "28_view-email"
+    .replace(/<?\b\d{2}_[a-z][a-z-]*\b>?/g, '');
+
+export function sanitize(raw: string): string {
+  return stripLinks(
+    String(raw)
+      .replace(/<aside>[\s\S]*?<\/aside>/gi, '')
+      .replace(/<\/?block>/gi, '')
+  )
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
 const cleanPiece = (s: string): string =>
-  s
-    .replace(/\[[^\]]*\]\([^)]*\)/g, '')
+  stripLinks(s)
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -33,7 +43,7 @@ const cleanPiece = (s: string): string =>
  */
 const MAX_BUBBLES = 4;
 const MAX_BUBBLE_LEN = 240; // ~2-3 sentences; longer prose gets chunked
-const SPLIT_THRESHOLD = 300; // a whole reply shorter than this stays ONE message
+const SPLIT_THRESHOLD = 300; // a short, unstructured reply stays ONE message
 
 // True if a paragraph reads like a list (>= 2 bullet/numbered lines): keep whole.
 const isList = (p: string): boolean => (p.match(/^\s*([-*•]|\d+[.)])\s/gm) || []).length >= 2;
@@ -62,9 +72,9 @@ function chunkProse(p: string, max: number): string[] {
 export function splitBubbles(raw: string): string[] {
   const text = String(raw).replace(/<aside>[\s\S]*?<\/aside>/gi, '');
 
-  // A short, purely conversational reply stays ONE message — don't fragment it
-  // into several texts for no reason. Only split when there's structure (a
-  // list/block) or the reply is long enough to actually read as several texts.
+  // A short, unstructured reply is ONE message. The "second text" cadence comes
+  // from the runtime's optional follow-up turn, not from chopping one reply up.
+  // Only split when there's structure (a list/block) or the reply is long.
   const hasStructure = /<block>/i.test(text) || text.split(/\n{2,}/).some((p) => isList(cleanPiece(p)));
   const plain = cleanPiece(text.replace(/<\/?block>/gi, ''));
   if (!hasStructure && plain.length <= SPLIT_THRESHOLD) return plain ? [plain] : [];

@@ -1,17 +1,20 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { config } from './config.js';
+import { geminiTurn } from './gemini.js';
 
 export const anthropic = new Anthropic({ apiKey: config.anthropicKey });
 
 /**
- * Run one Claude turn with streaming (the SDK rejects non-streaming calls at
- * high max_tokens, so we always stream and collect the final message).
+ * Run one model turn. Routes to Gemini (orchestrator AND worker share the
+ * provider) when configured; otherwise Claude. Claude streams because the SDK
+ * rejects non-streaming at high max_tokens; either path returns one Message.
  */
 export async function runTurn(params: {
   system: string;
   messages: Anthropic.MessageParam[];
   tools?: Anthropic.Tool[];
 }): Promise<Anthropic.Message> {
+  if (config.provider === 'gemini') return geminiTurn(params);
   const stream = anthropic.messages.stream({
     model: config.model,
     max_tokens: config.maxTokens,
