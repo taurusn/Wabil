@@ -9,7 +9,13 @@ const stripLinks = (s: string): string =>
     .replace(/<[^>\s]+>\([^)]*\)/g, '')
     .replace(/\(poke\.com\/[^)]*\)/g, '')
     // bare Poke link labels Gemini leaks as plain text, e.g. "28_view-email"
-    .replace(/<?\b\d{2}_[a-z][a-z-]*\b>?/g, '');
+    .replace(/<?\b\d{2}_[a-z][a-z-]*\b>?/g, '')
+    // markdown the UI would render raw (it's a plain-text bubble): keep the words
+    .replace(/\*\*([^*]+?)\*\*/g, '$1') // **bold**
+    .replace(/(?<![*\w])\*([^*\n]+?)\*(?!\w)/g, '$1') // *italic*
+    .replace(/(?<![_\w])__([^_]+?)__(?!\w)/g, '$1') // __bold__
+    .replace(/`([^`]+?)`/g, '$1') // `code`
+    .replace(/^#{1,6}[ \t]+/gm, ''); // # headings
 
 export function sanitize(raw: string): string {
   return stripLinks(
