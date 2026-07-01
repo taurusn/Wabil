@@ -17,7 +17,7 @@ const MAX_STEPS = 8;
 const sendMessageToAgent: Anthropic.Tool = {
   name: 'send_message_to_agent',
   description:
-    'Dispatch a background execution agent to do real work (search the inbox, draft or send an email, etc). It runs in the background and reports back later as a separate <agent> message, so after dispatching you should acknowledge the user (e.g. "on it") and call wait rather than stalling. Describe WHAT you need in plain language, never how.',
+    'Dispatch a background execution agent to do real work (search the inbox, draft or send an email, etc). It runs in the background and reports back later as a separate <agent> message, so after dispatching you should give the user one short, natural acknowledgement in your own voice (vary it, never a stock phrase) and call wait rather than stalling. Describe WHAT you need in plain language, never how.',
   input_schema: {
     type: 'object',
     properties: {

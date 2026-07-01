@@ -15,3 +15,6 @@ app/web-build/
 *.log
 .DS_Store
 .expo/
+
+# test-instance isolated db (contains real inbox data — never commit)
+server/data-test/

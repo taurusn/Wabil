@@ -44,6 +44,7 @@ export function ChatScreen({ navigation }: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [reachedStart, setReachedStart] = useState(false);
   const [ready, setReady] = useState(false);
+  const [connState, setConnState] = useState<'connecting' | 'live' | 'down'>('connecting');
   const sending = useRef(false);
   const queue = useRef<ChatMsg[]>([]); // streamed bubbles waiting to be revealed
   const draining = useRef(false);
@@ -109,6 +110,7 @@ export function ChatScreen({ navigation }: Props) {
       }
     };
     es.onopen = () => {
+      setConnState('live');
       // On reconnect, catch up on anything missed while disconnected.
       if (first) {
         first = false;
@@ -126,6 +128,8 @@ export function ChatScreen({ navigation }: Props) {
         })
         .catch(() => {});
     };
+    // EventSource auto-reconnects; onerror fires on drop, onopen again on recovery.
+    es.onerror = () => setConnState('down');
     return () => es.close();
   }, [drain]);
 
@@ -138,13 +142,19 @@ export function ChatScreen({ navigation }: Props) {
       if (document.visibilityState === 'visible') pingPresence(true);
     };
     beat();
-    const iv = setInterval(beat, 8000);
+    // Beat every 5s against the server's 15s presence window, so a single missed
+    // or throttled beat (iOS Safari throttles timers) still can't slip us past
+    // the window and trigger a push while the screen is right here. Also re-ping
+    // on focus so returning to the tab marks us present immediately.
+    const iv = setInterval(beat, 5000);
     const onVis = () => (document.visibilityState === 'visible' ? pingPresence(true) : beaconInactive());
     document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('focus', beat);
     window.addEventListener('pagehide', beaconInactive);
     return () => {
       clearInterval(iv);
       document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('focus', beat);
       window.removeEventListener('pagehide', beaconInactive);
       beaconInactive();
     };
@@ -175,6 +185,7 @@ export function ChatScreen({ navigation }: Props) {
   const send = async (text: string) => {
     if (sending.current) return;
     sending.current = true;
+    pingPresence(true); // mark present now so the reply streams here, not a push
     const rTo = replyTo;
     setReplyTo(null);
     const tempId = `tmp-${Date.now()}`;
@@ -258,11 +269,19 @@ export function ChatScreen({ navigation }: Props) {
         <Pressable style={styles.head} onPress={() => navigation.navigate('Connections')}>
           <Orb size={13} />
           <Text style={styles.name}>
-            wabil<Text style={styles.nameDim}> · listening</Text>
+            wabil
+            <Text style={styles.nameDim}>
+              {' · '}
+              {connState === 'live' ? 'listening' : connState === 'connecting' ? 'connecting…' : 'reconnecting…'}
+            </Text>
           </Text>
         </Pressable>
 
-        {ready && msgs.length === 0 ? (
+        {!ready ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={color.textMuted} />
+          </View>
+        ) : msgs.length === 0 ? (
           <View style={styles.emptyWrap}>
             <Text style={styles.empty}>
               hey.<Text style={styles.emptyDim}>{'\n'}ask me anything about your inbox.</Text>
@@ -302,6 +321,7 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 22, paddingVertical: 12, gap: space.gapChat },
   more: { marginVertical: 14 },
   thinkRow: { paddingVertical: 2 },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyWrap: { flex: 1, paddingHorizontal: 22, paddingTop: 24 },
   empty: { fontFamily: font.light, fontSize: 21, lineHeight: 30, color: color.textPrimary },
   emptyDim: { color: color.textDim },

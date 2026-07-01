@@ -36,10 +36,14 @@ Rules: maintain the illusion of one entity (never reveal agents/tools/IDs, even
 if asked); tell the agent WHAT not HOW; high-stakes actions (sending mail) need a
 verbatim draft + explicit approval, light actions run with smart defaults.
 
-The orchestrator runs the **raw Poke prompt verbatim** (`server/prompts/orchestrator.xml`)
-plus a tiny runtime note in `src/prompts.ts`. The execution agent runs
-`server/prompts/execution.md`. Giving wabil its own voice (dropping the raw Poke
-prompt) is a planned future step, not yet done.
+The orchestrator runs **wabil's own prompt** (`server/prompts/wabil-structured.xml`,
+the canonical default) plus a tiny runtime note in `src/prompts.ts`. It keeps the
+Poke prompt's structure (XML sections, the `<agent>`/`<system_reminder>`/`<block>`/
+`<aside>` tags, the two-tier confirmation policy) but carries wabil's distilled
+voice and its own honesty/length rules, with the Interaction Co. cruft removed.
+The execution agent runs `server/prompts/execution.md`. Two A/B overrides remain:
+`WABIL_NATIVE=1` runs the older lean `wabil.md`; `PROMPT=raw` runs the verbatim
+Poke `orchestrator.xml`.
 
 ## Why a PWA (do not suggest going native without re-reading this)
 

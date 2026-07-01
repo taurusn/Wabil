@@ -11,7 +11,11 @@ import { config } from './config.js';
 //  - reply context: pull a replied-to message + its neighbours, even across sessions
 
 const here = dirname(fileURLToPath(import.meta.url));
-const dataDir = join(here, '..', 'data');
+// DATA_DIR overrides the default so a throwaway/test instance can keep its chat
+// history out of the live db. Defaults to ../data (the real single-user store).
+const dataDir = process.env.DATA_DIR
+  ? (process.env.DATA_DIR.startsWith('/') ? process.env.DATA_DIR : join(here, '..', process.env.DATA_DIR))
+  : join(here, '..', 'data');
 if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
 
 const db = new Database(join(dataDir, 'wabil.db'));
