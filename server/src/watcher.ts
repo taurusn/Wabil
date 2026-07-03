@@ -151,7 +151,7 @@ export async function tick(): Promise<TickResult> {
           poke = { ...voiced, url: pokeUrl(), tag: `wabil-inbox-${m.id}` };
         } catch (e: any) {
           errors.push(`voice ${m.id}: ${e?.message || e}`);
-          poke = { title: 'new message', body: d.summary || m.subject, url: pokeUrl(), tag: `wabil-inbox-${m.id}` };
+          poke = { title: 'New message', body: d.summary || m.subject, url: pokeUrl(), tag: `wabil-inbox-${m.id}` };
         }
         seen.put(m.id, {
           status: 'pending',

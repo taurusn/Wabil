@@ -130,7 +130,7 @@ app.post('/unsubscribe', async (c) => {
 app.post('/push/test', async (c) => {
   try {
     const sent = await sendPoke({
-      title: 'new message',
+      title: 'New message',
       body: 'this is a test poke. if you can read this, the channel works.',
       url: '/digest',
     });

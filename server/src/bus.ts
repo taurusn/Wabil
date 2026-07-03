@@ -108,7 +108,7 @@ export function pushReplyOnce(id: string, text: string): void {
   // attributes the app), with the reply as the body.
   const body = text.replace(/\s+/g, ' ').trim().slice(0, 140);
   sendPoke({
-    title: 'new message',
+    title: 'New message',
     body,
     url: `/?m=${id}`,
     tag: `wabil-chat-${id}`,
