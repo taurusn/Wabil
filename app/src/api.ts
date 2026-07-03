@@ -2,6 +2,8 @@ import { API_BASE } from './config';
 
 export type Role = 'user' | 'assistant';
 
+export type Affect = 'neutral' | 'roast' | 'warm' | 'laugh';
+
 export type ChatMsg = {
   id: string;
   role: Role;
@@ -9,6 +11,8 @@ export type ChatMsg = {
   ts: number;
   sessionId: string;
   replyToId?: string | null;
+  /** flavor of an assistant bubble, SSE-only (not persisted); the face performs it */
+  affect?: Affect;
 };
 
 // The POST only ACKs the user's message now; the reply (or replies, including a
@@ -29,6 +33,7 @@ export async function sendChat(text: string, replyToId?: string | null): Promise
 // Live assistant stream. Single global stream (single-user app).
 export type StreamEvent =
   | { type: 'typing' }
+  | { type: 'working'; on: boolean }
   | { type: 'bubble'; message: ChatMsg }
   | { type: 'card'; card: unknown };
 
@@ -70,6 +75,7 @@ export async function getHistory(before?: number, limit = 40): Promise<ChatMsg[]
  */
 export function sanitize(raw: string): string {
   return String(raw)
+    .replace(/<affect>[\s\S]*?<\/affect>/gi, '')
     .replace(/<aside>[\s\S]*?<\/aside>/gi, '')
     .replace(/<\/?block>/gi, '')
     .replace(/\[[^\]]*\]\([^)]*\)/g, '')

@@ -109,7 +109,15 @@ function Dot({ index }: { index: number }) {
   return <Animated.View style={[styles.dot, s]} />;
 }
 
-export function InputBar({ onSend }: { onSend?: (text: string) => void }) {
+export function InputBar({
+  onSend,
+  onFocus,
+  onBlur,
+}: {
+  onSend?: (text: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+}) {
   const [val, setVal] = React.useState('');
   const active = val.trim().length > 0;
   const submit = () => {
@@ -127,6 +135,8 @@ export function InputBar({ onSend }: { onSend?: (text: string) => void }) {
         placeholder="say something…"
         placeholderTextColor={color.textDim}
         onSubmitEditing={submit}
+        onFocus={onFocus}
+        onBlur={onBlur}
         returnKeyType="send"
       />
       <Pressable onPress={submit} hitSlop={10} disabled={!active} style={({ pressed }) => pressed && { opacity: 0.85 }}>

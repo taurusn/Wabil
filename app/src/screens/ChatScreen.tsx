@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Background } from '../components/Background';
-import { Orb } from '../components/Orb';
+import { affectToFace, FACE_STATUS, Watcher, type FaceState } from '../components/Watcher';
 import { AssistantProse, InputBar, MessageIn, Quoted, SessionDivider, ThinkingDots, UserBubble } from '../components/chat';
 import { color, font, space } from '../theme';
 import type { RootStackParamList } from '../types';
@@ -14,6 +15,7 @@ import {
   sanitize,
   sendChat,
   streamUrl,
+  type Affect,
   type ChatMsg,
   type StreamEvent,
 } from '../api';
@@ -50,6 +52,70 @@ export function ChatScreen({ navigation }: Props) {
   const draining = useRef(false);
   const animSeen = useRef<Set<string>>(new Set()); // ids that have already animated in
 
+  // ---- the face. One state machine, resolved by priority from live signals:
+  // error > wake > alert > reveal(affect) > affect hold > thinking > listening > sleepy/idle
+  const [face, setFace] = useState<FaceState>('wake');
+  const faceCtl = useRef({
+    working: false,
+    revealUntil: 0,
+    affect: 'neutral' as Affect,
+    affectUntil: 0,
+    alertUntil: 0,
+    wakeUntil: Date.now() + 1500,
+  });
+  const inputFocusedRef = useRef(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  const lastSendTs = useRef(0);
+  const faceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const connRef = useRef<'connecting' | 'live' | 'down'>('connecting');
+
+  const recomputeFace = useCallback(() => {
+    const c = faceCtl.current;
+    const now = Date.now();
+    let f: FaceState;
+    if (connRef.current === 'down') f = 'error';
+    else if (now < c.wakeUntil) f = 'wake';
+    else if (now < c.alertUntil) f = 'alert';
+    else if (now < c.revealUntil) f = affectToFace(c.affect);
+    else if (now < c.affectUntil && c.affect !== 'neutral') f = affectToFace(c.affect);
+    else if (c.working) f = 'thinking';
+    else if (inputFocusedRef.current) f = 'listening';
+    else {
+      const h = new Date().getHours();
+      f = h >= 23 || h < 5 ? 'sleepy' : 'idle';
+    }
+    setFace(f);
+    // wake ourselves exactly when the nearest timed window expires
+    const next = [c.wakeUntil, c.alertUntil, c.revealUntil, c.affectUntil].filter((x) => x > now);
+    if (faceTimer.current) clearTimeout(faceTimer.current);
+    if (next.length) faceTimer.current = setTimeout(recomputeFace, Math.min(...next) - now + 30);
+  }, []);
+
+  // boot: play wake once; keep the sleepy window fresh with a slow tick
+  useEffect(() => {
+    recomputeFace();
+    const iv = setInterval(recomputeFace, 60000);
+    return () => {
+      clearInterval(iv);
+      if (faceTimer.current) clearTimeout(faceTimer.current);
+    };
+  }, [recomputeFace]);
+
+  // conn transitions: down → error face; recovery → wake again
+  useEffect(() => {
+    const prev = connRef.current;
+    connRef.current = connState;
+    if (prev === 'down' && connState === 'live') faceCtl.current.wakeUntil = Date.now() + 1400;
+    recomputeFace();
+  }, [connState, recomputeFace]);
+
+  // hero band collapses while the keyboard is up: the face yields to the conversation
+  const heroH = useSharedValue(104);
+  useEffect(() => {
+    heroH.value = withTiming(inputFocused ? 0 : 104, { duration: 260 });
+  }, [inputFocused, heroH]);
+  const heroStyle = useAnimatedStyle(() => ({ height: heroH.value, opacity: heroH.value / 104 }));
+
   const clean = (list: ChatMsg[]) => list.map((m) => ({ ...m, content: sanitize(m.content) }));
   // History + paginated messages should appear instantly; only live-streamed
   // bubbles spring in. Mark loaded ids as already-seen.
@@ -65,17 +131,27 @@ export function ChatScreen({ navigation }: Props) {
   const drain = useCallback(async () => {
     if (draining.current) return;
     draining.current = true;
+    const c = faceCtl.current;
     while (queue.current.length) {
       const next = queue.current[0];
+      const delay = Math.min(900, 360 + next.content.length * 6);
+      // the face performs this bubble's flavor while it lands
+      c.affect = next.affect ?? 'neutral';
+      c.revealUntil = Date.now() + delay + 700;
+      recomputeFace();
       setThinking(true); // dots = a message is landing right now (not "busy")
-      await sleep(Math.min(900, 360 + next.content.length * 6));
+      await sleep(delay);
       setThinking(false);
       queue.current.shift();
       addMsg({ ...next, content: sanitize(next.content) });
       if (queue.current.length) await sleep(220); // a beat between texts
     }
+    // hold a non-neutral affect for a beat after the last bubble, then settle
+    if (c.affect !== 'neutral') c.affectUntil = Date.now() + 2200;
+    c.revealUntil = 0;
+    recomputeFace();
     draining.current = false;
-  }, [addMsg]);
+  }, [addMsg, recomputeFace]);
 
   // Initial history.
   useEffect(() => {
@@ -104,7 +180,17 @@ export function ChatScreen({ navigation }: Props) {
       }
       // 'typing' is ignored on purpose: dots are a per-bubble reveal, driven
       // locally when a real bubble arrives — never a backend-busy spinner.
+      if (e.type === 'working') {
+        // the worker is digging: the face narrows its eyes until it reports back
+        faceCtl.current.working = e.on;
+        recomputeFace();
+      }
       if (e.type === 'bubble') {
+        // a bubble with no recent user message = a proactive poke: perk first
+        if (Date.now() - lastSendTs.current > 90000 && queue.current.length === 0 && !draining.current) {
+          faceCtl.current.alertUntil = Date.now() + 1100;
+          recomputeFace();
+        }
         queue.current.push(e.message);
         drain();
       }
@@ -185,6 +271,7 @@ export function ChatScreen({ navigation }: Props) {
   const send = async (text: string) => {
     if (sending.current) return;
     sending.current = true;
+    lastSendTs.current = Date.now(); // replies to this are answers, not pokes
     pingPresence(true); // mark present now so the reply streams here, not a push
     const rTo = replyTo;
     setReplyTo(null);
@@ -267,15 +354,19 @@ export function ChatScreen({ navigation }: Props) {
     <Background>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <Pressable style={styles.head} onPress={() => navigation.navigate('Connections')}>
-          <Orb size={13} />
+          <Watcher size={22} state={face} />
           <Text style={styles.name}>
             wabil
             <Text style={styles.nameDim}>
               {' · '}
-              {connState === 'live' ? 'listening' : connState === 'connecting' ? 'connecting…' : 'reconnecting…'}
+              {connState === 'connecting' ? 'connecting…' : FACE_STATUS[face]}
             </Text>
           </Text>
         </Pressable>
+
+        <Animated.View style={[styles.heroBand, heroStyle]}>
+          <Watcher size={92} state={face} />
+        </Animated.View>
 
         {!ready ? (
           <View style={styles.loadingWrap}>
@@ -306,7 +397,19 @@ export function ChatScreen({ navigation }: Props) {
           {replyTo ? (
             <Quoted who={replyTo.role === 'user' ? 'you' : 'wabil'} text={replyTo.content} onCancel={() => setReplyTo(null)} />
           ) : null}
-          <InputBar onSend={send} />
+          <InputBar
+            onSend={send}
+            onFocus={() => {
+              inputFocusedRef.current = true;
+              setInputFocused(true);
+              recomputeFace();
+            }}
+            onBlur={() => {
+              inputFocusedRef.current = false;
+              setInputFocused(false);
+              recomputeFace();
+            }}
+          />
         </View>
       </SafeAreaView>
     </Background>
@@ -316,6 +419,7 @@ export function ChatScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 26, paddingTop: 12, paddingBottom: 6 },
+  heroBand: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   name: { fontFamily: font.medium, fontSize: 14, color: color.textSecondary },
   nameDim: { fontFamily: font.light, color: color.textMuted },
   list: { paddingHorizontal: 22, paddingVertical: 12, gap: space.gapChat },

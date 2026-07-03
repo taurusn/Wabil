@@ -14,6 +14,24 @@ import * as bus from './bus.js';
 
 const MAX_STEPS = 8;
 
+// A hung agent (e.g. a dead MCP connection) must still report back, or the
+// session never resumes, the user never gets a follow-up, and the face squints
+// forever. The watchdog turns a hang into a normal error report-back.
+const AGENT_TIMEOUT_MS = 3 * 60_000;
+function withTimeout(p: Promise<string>): Promise<string> {
+  return Promise.race([
+    p,
+    new Promise<string>((resolve) => {
+      const t = setTimeout(
+        () => resolve('error: the task timed out and was abandoned. tell the user honestly that it failed.'),
+        AGENT_TIMEOUT_MS,
+      );
+      // don't keep the process alive just for the watchdog
+      (t as { unref?: () => void }).unref?.();
+    }),
+  ]);
+}
+
 const sendMessageToAgent: Anthropic.Tool = {
   name: 'send_message_to_agent',
   description:
@@ -77,15 +95,25 @@ function coalesce(rows: { role: store.Role; content: string }[]): Anthropic.Mess
   return out;
 }
 
+// The orchestrator opens each reply with a one-token affect tag; strip it before
+// storing and hand it to the face over SSE. A missing/garbled tag = neutral.
+const AFFECT_RE = /^\s*<affect>\s*(neutral|roast|warm|laugh)\s*<\/affect>\s*/i;
+
 // Persist + stream each bubble of an assistant turn. The client reveals them one
 // at a time with a typing beat, so a multi-bubble answer lands like several
 // texts. Push only ONCE for the whole reply (not per bubble) when the app's closed.
 function emitText(sessionId: string, raw: string): void {
+  let affect: bus.Affect = 'neutral';
+  const tag = raw.match(AFFECT_RE);
+  if (tag) {
+    affect = tag[1].toLowerCase() as bus.Affect;
+    raw = raw.slice(tag[0].length);
+  }
   const bubbles = splitBubbles(raw);
   let firstId: string | null = null;
   for (const bubble of bubbles) {
     const m = store.addMessage({ role: 'assistant', content: bubble, sessionId });
-    bus.streamBubble({ id: m.id, content: m.content, ts: m.ts, sessionId: m.sessionId });
+    bus.streamBubble({ id: m.id, content: m.content, ts: m.ts, sessionId: m.sessionId, affect });
     if (!firstId) firstId = m.id;
   }
   if (firstId) bus.pushReplyOnce(firstId, bubbles.join(' '));
@@ -94,6 +122,7 @@ function emitText(sessionId: string, raw: string): void {
 function onAgentResult(sessionId: string, name: string, result: string): void {
   const s = getSession(sessionId);
   s.pending = Math.max(0, s.pending - 1);
+  if (s.pending === 0) bus.emitWorking(false);
   s.transcript.push({
     role: 'user',
     content: `<agent name="${name}" sentAt="${new Date().toISOString()}">\n${result}\n</agent>`,
@@ -157,7 +186,8 @@ async function runLoop(sessionId: string): Promise<void> {
         const input = c.input as { agent_name?: string; message: string };
         const name = input.agent_name || 'agent';
         s.pending++;
-        runExecutionAgent(input.message)
+        bus.emitWorking(true); // the face narrows its eyes while the worker digs
+        withTimeout(runExecutionAgent(input.message))
           .then((r) => onAgentResult(sessionId, name, r))
           .catch((e) => onAgentResult(sessionId, name, `error: ${e?.message || e}`));
         results.push({

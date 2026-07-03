@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>wabil face lab, round 3: the watcher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page:#07080C; --bg:#0B0D13; --glow-from:#1A2536;
+    --text-bright:#EEF2FA; --text:#DDE4F1; --sec:#8492AC; --dim:#6B7488; --muted:#5D6A85;
+    --accent:#6BA8FF; --hi:#AEE0FF;
+    --hairline:rgba(140,170,220,.16); --surface:rgba(120,150,200,.05);
+    --bubble-me:rgba(120,150,200,.12); --bubble-edge:rgba(140,170,220,.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--page)}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    color:var(--text); min-height:100vh; padding:40px 24px 56px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  header{max-width:900px; width:100%; text-align:center; margin-bottom:28px}
+  h1{font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:32px; color:var(--text-bright)}
+  .sub{font-weight:300; font-size:14px; color:var(--sec); margin-top:9px; line-height:1.6}
+
+  main{display:flex; gap:34px; flex-wrap:wrap; justify-content:center; align-items:flex-start; width:100%; max-width:1060px}
+
+  /* phone */
+  .phone{
+    width:296px; height:560px; border-radius:36px; overflow:hidden; position:relative; flex:none;
+    border:1px solid var(--hairline);
+    background:radial-gradient(120% 55% at 50% 0%, var(--glow-from) 0%, var(--bg) 55%);
+    box-shadow:0 24px 60px rgba(0,0,0,.5);
+    display:flex; flex-direction:column;
+  }
+  .phead{display:flex; align-items:center; gap:9px; padding:20px 20px 4px}
+  .phead .pname{font-weight:500; font-size:12.5px; color:var(--sec)}
+  .phead .pstatus{font-weight:300; color:var(--muted)}
+  .hero{height:104px; display:grid; place-items:center; position:relative}
+  .halo{
+    position:absolute; width:120px; height:120px; border-radius:50%;
+    background:radial-gradient(circle, rgba(107,168,255,.5) 0%, rgba(107,168,255,0) 68%);
+    filter:blur(14px); pointer-events:none;
+  }
+  .chat{flex:1; padding:6px 18px 10px; display:flex; flex-direction:column; justify-content:flex-end; gap:13px; overflow:hidden}
+  .prose{font-weight:300; font-size:13.5px; line-height:1.5; color:var(--text); max-width:86%}
+  .prose.dim{color:var(--sec)}
+  .ubub{
+    align-self:flex-end; max-width:78%;
+    background:var(--bubble-me); border:1px solid var(--bubble-edge);
+    border-radius:15px; padding:8px 12px; font-size:13.5px; color:#D4DDEE; line-height:1.45;
+  }
+  @keyframes popin{
+    0%{transform:scale(.4); opacity:0; transform-origin:bottom left}
+    60%{transform:scale(1.04); opacity:1}
+    100%{transform:scale(1); opacity:1}
+  }
+  .pop{animation:popin .42s cubic-bezier(.3,1.4,.5,1) both}
+  .inbar{padding:0 16px 18px}
+  .field{
+    height:38px; border-radius:19px; border:1px solid var(--hairline);
+    background:rgba(120,150,200,.06); display:flex; align-items:center; justify-content:space-between;
+    padding:0 6px 0 14px; font-weight:300; font-size:13px; color:var(--muted); overflow:hidden;
+  }
+  .field .typed{color:var(--text); white-space:nowrap}
+  .send{width:27px; height:27px; border-radius:50%; background:linear-gradient(160deg,#3F7FDC,#2C5FB0); opacity:.85; flex:none}
+
+  /* right column */
+  .right{display:flex; flex-direction:column; gap:20px; width:520px; max-width:100%}
+  .stage{
+    position:relative; height:250px; border-radius:20px; overflow:hidden;
+    border:1px solid var(--hairline);
+    background:radial-gradient(120% 90% at 50% 0%, var(--glow-from) 0%, var(--bg) 60%);
+    display:grid; place-items:center;
+  }
+  .stage .halo{width:190px; height:190px}
+
+  .rail{display:flex; flex-direction:column; gap:6px}
+  .rail .row{
+    display:flex; align-items:center; gap:14px; padding:7px 10px; border-radius:12px;
+    cursor:pointer; border:1px solid transparent; transition:border-color .2s, background .2s;
+  }
+  .rail .row:hover{background:var(--surface)}
+  .rail .row[aria-pressed="true"]{border-color:rgba(107,168,255,.45); background:var(--surface)}
+  .rail .tag{
+    flex:none; width:86px; font-weight:500; font-size:13px; color:var(--hi); text-align:right;
+  }
+  .rail .cap{font-weight:300; font-size:12.5px; color:var(--sec); line-height:1.5}
+  .rail .row.autorow .tag{color:var(--accent)}
+  .rail .row:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+  footer{margin-top:34px; font-weight:300; font-size:12.5px; color:var(--muted); text-align:center; line-height:1.7; max-width:600px}
+
+  /* watcher (design space 168px) */
+  .fbox{position:relative; overflow:visible}
+  .fwrap{position:absolute; left:0; top:0; width:168px; height:168px; transform-origin:top left}
+  .wEyes{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:34px}
+  .wEye{
+    width:30px; height:46px; border-radius:15px;
+    background:radial-gradient(circle at 42% 32%, #E4F3FF 0%, #A6D2FF 42%, #5E9BE8 100%);
+    will-change:transform,filter,box-shadow,clip-path;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>the watcher, state by state</h1>
+  <p class="sub">every state is pinned to the exact moment it fires in the app. the scene loops the real flow:<br>
+  wake, you type, it digs, it answers, it roasts, you laugh, it acts. click any state to hold it.</p>
+</header>
+
+<main>
+  <div class="phone">
+    <div class="phead"><div class="mini"></div>
+      <span class="pname">wabil <span class="pstatus">· listening</span></span>
+    </div>
+    <div class="hero"><div class="halo"></div><div class="big"></div></div>
+    <div class="chat">
+      <div class="prose dim">morning. three things actually need you today.</div>
+      <div class="lines"></div>
+    </div>
+    <div class="inbar"><div class="field"><span class="typed"></span><span class="ph">text wabil</span><span class="send"></span></div></div>
+  </div>
+
+  <div class="right">
+    <div class="stage"><div class="halo" id="stageHalo"></div><div class="huge"></div></div>
+    <div class="rail" id="rail" role="group" aria-label="watcher states">
+      <div class="row autorow" id="autoRow" role="button" tabindex="0" aria-pressed="true">
+        <span class="tag">auto scene</span><span class="cap">plays the whole conversation loop. clicking any state below pauses it.</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  one component, three mounts (detail stage, hero, the 13px header dot), one state machine.
+  every trigger listed above already exists in the runtime except the two marked new, which are one SSE event each.
+</footer>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const rand = (a,b)=>a+Math.random()*(b-a);
+  const smooth = (o,k,target,dt,rate)=>{ const cur=o[k]??target; o[k]=cur+(target-cur)*(1-Math.exp(-rate*dt)); return o[k]; };
+
+  // ------------------------------------------------------------------
+  // states + where each one fires (this list IS the implementation spec)
+  // ------------------------------------------------------------------
+  const STATES = [
+    {key:'wake',     status:'waking up',     cap:'app opens or SSE reconnects. the eyes open with a small overshoot.'},
+    {key:'idle',     status:'listening',     cap:'connected, nothing happening. breathes, blinks, looks around on its own.'},
+    {key:'listening',status:'listening',     cap:'you are typing in the input bar. it stills and turns to you (input focus, client-side).'},
+    {key:'thinking', status:'digging…',      cap:'the worker is digging through gmail. NEW: one working SSE event at dispatch and report-back.'},
+    {key:'talking',  status:'typing…',       cap:'bubbles are revealing. the light vibrates with each text, synced to the reveal queue.'},
+    {key:'roast',    status:'typing…',       cap:'reply tagged affect=roast by the orchestrator. NEW: one-token affect tag per reply.'},
+    {key:'happy',    status:'typing…',       cap:'affect=warm. the smile-eyes. rare on purpose, so it means something.'},
+    {key:'laughing', status:'laughing',      cap:'affect=laugh. it got you good, or you got it good. the crescents bounce.'},
+    {key:'alert',    status:'one new thing', cap:'a proactive poke lands while the app is open. perk, double flash, settle.'},
+    {key:'sleepy',   status:'up late',       cap:'23:00 to 05:00 riyadh and idle. droop, slow blinks, the occasional nod-off.'},
+    {key:'error',    status:'reconnecting…', cap:'server unreachable or SSE down. dim, unfocused, slightly out of line.'},
+  ];
+
+  // ------------------------------------------------------------------
+  // global state
+  // ------------------------------------------------------------------
+  let state='wake', stateAt=performance.now(), auto=true, sceneStart=performance.now();
+  const rail=document.getElementById('rail');
+  const autoRow=document.getElementById('autoRow');
+  const rows={};
+  for(const st of STATES){
+    const r=document.createElement('div');
+    r.className='row'; r.role='button'; r.tabIndex=0; r.dataset.state=st.key;
+    r.setAttribute('aria-pressed','false');
+    r.innerHTML=`<span class="tag">${st.key}</span><span class="cap">${st.cap}</span>`;
+    const pick=()=>{ auto=false; setState(st.key); paint(); };
+    r.addEventListener('click',pick);
+    r.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();} });
+    rail.appendChild(r); rows[st.key]=r;
+  }
+  function paint(){
+    autoRow.setAttribute('aria-pressed',String(auto));
+    for(const k in rows) rows[k].setAttribute('aria-pressed',String(!auto&&state===k));
+  }
+  function setState(s){ if(s!==state){ state=s; stateAt=performance.now(); } }
+  const startAuto=()=>{ auto=true; sceneStart=performance.now(); resetScene(); setState('wake'); paint(); };
+  autoRow.addEventListener('click',startAuto);
+  autoRow.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();startAuto();} });
+
+  const sac={at:0,target:0,x:0};
+  const talk={at:0,target:0,amp:0};
+  const wander={at:0,tx:0,ty:0,x:0,y:0};
+  const mouse={x:innerWidth/2,y:innerHeight/2};
+  addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;},{passive:true});
+  const makeBlinker=()=>({start:-1e9,next:performance.now()+rand(1800,4500)});
+  function blinkVal(b,now){
+    const sleepy=state==='sleepy';
+    if(now>=b.next){ b.start=now; b.next=now+(sleepy?rand(2000,3800):rand(3200,7000)); }
+    const dur=sleepy?680:250, p=(now-b.start)/dur;
+    if(p<0||p>1)return 0;
+    return p<.4?p/.4:1-(p-.4)/.6;
+  }
+
+  // ------------------------------------------------------------------
+  // the watcher, v2
+  // ------------------------------------------------------------------
+  const D={h:1,w:1,rL:0,rR:0,dx:0,dy:0,br:1,glow:.30,hL:null,happy:0,err:0,laugh:0};
+  const ST={
+    wake:     {...D, br:1.05, glow:.40},
+    idle:     {...D},
+    listening:{...D, h:1.08, w:1.02, dy:5, br:1.08, glow:.36},
+    thinking: {...D, h:.32, dy:2, br:.95, glow:.34},
+    talking:  {...D, h:.92, br:1.05, glow:.44},
+    roast:    {...D, h:.95, hL:.48, rL:-9, dx:11, dy:1, br:.95, glow:.30},
+    happy:    {...D, h:.52, dy:-3, br:1.18, glow:.52, happy:1},
+    laughing: {...D, h:.52, dy:-2, br:1.2,  glow:.55, happy:1, laugh:1},
+    alert:    {...D, h:1.22, w:1.08, dy:-2, br:1.4, glow:.85},
+    sleepy:   {...D, h:.30, rL:-22, rR:22, dy:7, br:.6, glow:.12},
+    error:    {...D, h:.85, rL:-4, rR:3, dy:2, br:.55, glow:.15, err:1},
+  };
+
+  let uid=0;
+  function mountWatcher(container, scale){
+    const k=scale, box=document.createElement('div');
+    box.className='fbox'; box.style.width=(168*k)+'px'; box.style.height=(168*k)+'px';
+    const wrap=document.createElement('div');
+    wrap.className='fwrap'; wrap.style.transform=`scale(${k})`;
+    wrap.innerHTML=`<div class="wEyes"><div class="wEye L"></div><div class="wEye R"></div></div>`;
+    box.appendChild(wrap); container.appendChild(box);
+    const L=wrap.querySelector('.L'), R=wrap.querySelector('.R');
+    const s={}, bl=makeBlinker(), phase=rand(0,3);
+
+    return (ctx)=>{
+      const st=ST[state];
+      let b=blinkVal(bl,ctx.now);
+
+      // roast: the disdain blink, one slow deliberate close 0.5s in
+      if(state==='roast'){
+        const rt=ctx.now-stateAt;
+        if(rt>500&&rt<1150) b=Math.max(b,Math.sin(Math.PI*(rt-500)/650)*.92);
+      }
+
+      // wake: eyes open with overshoot on entry
+      let wakeF=1;
+      if(state==='wake'){
+        const wt=(ctx.now-stateAt)/1000;
+        wakeF=clamp(1-Math.exp(-wt*5.5)*Math.cos(wt*9),.04,1.18);
+      }
+
+      // sleepy: the occasional nod-off (a slow dip that catches itself)
+      let nod=0;
+      if(state==='sleepy'){ const n=Math.sin(ctx.t*.55); nod=ctx.amb*Math.max(0,n*n*n)*6; }
+
+      // idle wander: it looks around on its own
+      if(state==='idle'&&ctx.now>wander.at){ wander.tx=rand(-7,7); wander.ty=rand(-3,4); wander.at=ctx.now+rand(2500,5000); }
+      if(state!=='idle'){ wander.tx=0; wander.ty=0; }
+      smooth(wander,'x',wander.tx,ctx.dt,4); smooth(wander,'y',wander.ty,ctx.dt,4);
+
+      // laughing: the crescents bounce, with a small opposing shake
+      const lf=smooth(s,'lf',st.laugh,ctx.dt,10);
+      const laughBounce=lf>.02?-Math.abs(Math.sin(ctx.t*11))*4*lf*ctx.amb:0;
+      const laughTilt=lf>.02?Math.sin(ctx.t*11)*3*lf*ctx.amb:0;
+
+      const still=state==='listening'?0:1;
+      const sway=ctx.amb*still*(state==='idle'?2*Math.sin(ctx.t*.8):0);
+      const dx=smooth(s,'dx',st.dx,ctx.dt,10)+(ctx.gaze.x*8+wander.x)*(state==='listening'?.3:1)+(state==='thinking'?sac.x:0)+sway;
+      const dy=smooth(s,'dy',st.dy,ctx.dt,10)+(ctx.gaze.y*5+wander.y)*(state==='listening'?.3:1)+ctx.bob+nod+laughBounce;
+
+      const hL=smooth(s,'hL',(st.hL??st.h),ctx.dt,10)*(1-b*.95)*wakeF;
+      const hR=smooth(s,'hR',st.h,ctx.dt,10)*(1-b*.95)*wakeF;
+      const w=smooth(s,'w',st.w,ctx.dt,10);
+      const rL=smooth(s,'rL',st.rL,ctx.dt,10)-laughTilt, rR=smooth(s,'rR',st.rR,ctx.dt,10)+laughTilt;
+
+      // talking: the LIGHT carries the voice, the body barely moves.
+      // slow shimmer (~2.5Hz), per-eye phase so they don't pulse as one block.
+      const vibL=ctx.amp*(0.85+0.15*Math.sin(ctx.t*16+phase));
+      const vibR=ctx.amp*(0.85+0.15*Math.sin(ctx.t*16+phase+1.7));
+      const amp2=smooth(s,'amp2',ctx.amp,ctx.dt,9);
+
+      L.style.transform=`translate(${dx.toFixed(2)}px,${(dy-ctx.amp*3).toFixed(2)}px) rotate(${rL.toFixed(2)}deg) scale(${(w+vibL*.02).toFixed(3)},${Math.max(.04,hL+vibL*.03).toFixed(3)})`;
+      R.style.transform=`translate(${dx.toFixed(2)}px,${(dy-amp2*3).toFixed(2)}px) rotate(${rR.toFixed(2)}deg) scale(${(w+vibR*.02).toFixed(3)},${Math.max(.04,hR+vibR*.03).toFixed(3)})`;
+
+      // brightness: state base + speech vibration + alert double-flash + error flicker
+      let br=smooth(s,'br',st.br,ctx.dt,8);
+      if(state==='alert'){ const ft=ctx.now-stateAt; br+=Math.exp(-ft/350)*.5*Math.abs(Math.sin(ft/70)); }
+      const errF=smooth(s,'err',st.err,ctx.dt,8);
+      if(errF>.02) br*=1-errF*(.25+.15*Math.sin(ctx.t*7)+(Math.sin(ctx.t*23.7)>.965?.3:0));
+      if(lf>.02) br+=lf*.08*Math.sin(ctx.t*22);
+      L.style.filter=`brightness(${(br+vibL*.3).toFixed(3)})`;
+      R.style.filter=`brightness(${(br+vibR*.3).toFixed(3)})`;
+
+      // the glow leaving the eyes swells with the voice
+      L.style.boxShadow=`0 0 ${(14+vibL*12).toFixed(1)}px rgba(130,185,255,${(.45+vibL*.25).toFixed(3)}), 0 0 ${(44+vibL*30).toFixed(1)}px rgba(107,168,255,${(.22+vibL*.22).toFixed(3)})`;
+      R.style.boxShadow=`0 0 ${(14+vibR*12).toFixed(1)}px rgba(130,185,255,${(.45+vibR*.25).toFixed(3)}), 0 0 ${(44+vibR*30).toFixed(1)}px rgba(107,168,255,${(.22+vibR*.22).toFixed(3)})`;
+
+      // happy: crescent smile-eyes (flat cut rises from the bottom)
+      const hp=smooth(s,'hp',st.happy,ctx.dt,10);
+      const clip=hp>.02?`inset(0 0 ${(hp*46).toFixed(1)}% 0 round 15px)`:'none';
+      L.style.clipPath=clip; R.style.clipPath=clip;
+
+      return smooth(s,'glow',st.glow,ctx.dt,8)+Math.max(vibL,vibR)*.25;
+    };
+  }
+
+  // ------------------------------------------------------------------
+  // mounts
+  // ------------------------------------------------------------------
+  const upHuge=mountWatcher(document.querySelector('.huge'),1.15);
+  const upBig=mountWatcher(document.querySelector('.big'),0.55);
+  const upMini=mountWatcher(document.querySelector('.mini'),0.155);
+  const stageHalo=document.getElementById('stageHalo');
+  const heroHalo=document.querySelector('.phone .halo');
+  const statusEl=document.querySelector('.pstatus');
+  const linesEl=document.querySelector('.lines');
+  const typedEl=document.querySelector('.typed');
+  const phEl=document.querySelector('.field .ph');
+  const STATUS=Object.fromEntries(STATES.map(s=>[s.key,s.status]));
+
+  // ------------------------------------------------------------------
+  // the scene: the real flow, on loop
+  // ------------------------------------------------------------------
+  const ASK="how's my inbox looking";
+  const SCRIPT=[
+    {at:0,    state:'wake'},
+    {at:1300, state:'idle'},
+    {at:3000, state:'listening', typeFrom:3000},
+    {at:4900, state:'thinking', ubub:ASK, clearField:true},
+    {at:7900, state:'talking', line:'42 unread. one actual human.'},
+    {at:10400,state:'roast',   line:'the rest is newsletters you keep swearing you\'ll read.'},
+    {at:13100,state:'listening', ubub:'lol clean them out', typeFrom:null},
+    {at:14200,state:'laughing'},
+    {at:16400,state:'talking', line:'done. 41 fewer lies in your life.'},
+    {at:18900,state:'happy'},
+    {at:20200,state:'idle'},
+    {at:22500,restart:true},
+  ];
+  let fired=new Set(), typingFrom=null;
+  function resetScene(){ fired=new Set(); typingFrom=null; linesEl.innerHTML=''; typedEl.textContent=''; phEl.style.display=''; }
+  function addLine(text,animate){
+    const d=document.createElement('div');
+    d.className=animate?'prose pop':'prose'; d.textContent=text; d.style.marginTop='13px';
+    linesEl.appendChild(d);
+  }
+  function addBub(text,animate){
+    const d=document.createElement('div');
+    d.className=animate?'ubub pop':'ubub'; d.textContent=text; d.style.marginTop='13px'; d.style.alignSelf='flex-end';
+    linesEl.appendChild(d);
+  }
+  function runScene(now){
+    const t=now-sceneStart;
+    // after a rAF stall (backgrounded tab, screenshot capture), several events land
+    // in one frame: apply them all but only animate the newest, like a real catch-up.
+    const pending=SCRIPT.filter(ev=>t>=ev.at&&!fired.has(ev.at));
+    for(let i=0;i<pending.length;i++){
+      const ev=pending[i], newest=i===pending.length-1;
+      fired.add(ev.at);
+      if(ev.restart){ sceneStart=now; resetScene(); setState('wake'); return; }
+      if(ev.state) setState(ev.state);
+      if('typeFrom'in ev) typingFrom=ev.typeFrom;
+      if(ev.clearField){ typingFrom=null; typedEl.textContent=''; phEl.style.display=''; }
+      if(ev.ubub) addBub(ev.ubub,newest);
+      if(ev.line) addLine(ev.line,newest);
+    }
+    if(typingFrom!=null){
+      const n=Math.floor((t-typingFrom)/55);
+      if(n>0){ phEl.style.display='none'; typedEl.textContent=ASK.slice(0,Math.min(n,ASK.length)); }
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // loop
+  // ------------------------------------------------------------------
+  paint();
+  let last=performance.now();
+  function tick(now){
+    const dt=Math.min(.05,(now-last)/1000); last=now;
+    const t=now/1000, amb=reduce?0:1;
+
+    if(auto) runScene(now);
+
+    if(state==='thinking'&&now>sac.at){ sac.target=(Math.random()<.5?-1:1)*rand(7,14); sac.at=now+rand(340,720); }
+    if(state!=='thinking') sac.target=0;
+    smooth(sac,'x',sac.target,dt,14);
+
+    // speech envelope: slower phrase rhythm with real rests, soft attack
+    if(state==='talking'||state==='roast'){ if(now>talk.at){ talk.target=Math.random()<.3?0:rand(.3,1); talk.at=now+rand(140,300); } }
+    else talk.target=0;
+    smooth(talk,'amp',talk.target,dt,12);
+
+    const bob=state==='sleepy'?amb*3*Math.sin(t*.9):0;
+
+    const stage=document.querySelector('.stage').getBoundingClientRect();
+    const hero=document.querySelector('.hero').getBoundingClientRect();
+    const gz=(r)=>({x:clamp((mouse.x-(r.left+r.width/2))/300,-1,1),y:clamp((mouse.y-(r.top+r.height/2))/300,-1,1)});
+
+    const ctxBase={now,t,dt,amb,bob,amp:talk.amp};
+    const g1=upHuge({...ctxBase,gaze:gz(stage)});
+    const g2=upBig({...ctxBase,gaze:gz(hero)});
+    upMini({...ctxBase,gaze:{x:gz(hero).x*.6,y:gz(hero).y*.6},bob:0});
+    stageHalo.style.opacity=(g1??.3).toFixed(3);
+    heroHalo.style.opacity=(g2??.3).toFixed(3);
+    statusEl.textContent='· '+(STATUS[state]??'listening');
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

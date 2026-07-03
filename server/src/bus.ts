@@ -7,11 +7,16 @@ import { sendPoke } from './push.js';
 // reach the open app live. When NO client is connected, an assistant bubble
 // falls back to a web push so a closed app still gets the follow-up.
 
+// The flavor of a reply, one token, chosen by the orchestrator. The face
+// performs it (roast = side-eye, laugh = bouncing crescents, warm = smile).
+export type Affect = 'neutral' | 'roast' | 'warm' | 'laugh';
+
 export type StreamEvent =
   | { type: 'typing' }
+  | { type: 'working'; on: boolean }
   | {
       type: 'bubble';
-      message: { id: string; role: 'assistant'; content: string; ts: number; sessionId: string };
+      message: { id: string; role: 'assistant'; content: string; ts: number; sessionId: string; affect?: Affect };
     }
   | { type: 'card'; card: ChoiceCard };
 
@@ -64,6 +69,14 @@ export function emitTyping(): void {
   broadcast({ type: 'typing' });
 }
 
+/**
+ * The worker is digging (or done). Drives the face's thinking state; purely
+ * presentational, so it is never persisted and a missed event costs nothing.
+ */
+export function emitWorking(on: boolean): void {
+  broadcast({ type: 'working', on });
+}
+
 export function emitCard(card: ChoiceCard): void {
   broadcast({ type: 'card', card });
 }
@@ -78,6 +91,7 @@ export function streamBubble(message: {
   content: string;
   ts: number;
   sessionId: string;
+  affect?: Affect;
 }): void {
   broadcast({ type: 'bubble', message: { ...message, role: 'assistant' } });
 }
