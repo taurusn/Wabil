@@ -7,13 +7,14 @@ self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch { data = { body: event.data && event.data.text() }; }
-  // no custom title: iOS already stamps the app name on every notification,
-  // so the message rides as plain BODY text under it — like a real text.
-  // (a title is only used when the server explicitly sends one, e.g. a
-  // voiced inbox poke with a real content headline.)
-  const title = data.title || '';
+  // iOS forces a "from wabil" subtitle on all web push AND auto-fills an empty
+  // title with the app name — so the single-wabil layout is message-in-title.
+  // promote body to title if a payload ever arrives without one.
+  let title = data.title || '';
+  let body = data.body || '';
+  if (!title) { title = body || 'something new'; body = ''; }
   const options = {
-    body: data.body || '',
+    body,
     icon: '/icons/icon-192.png',
     badge: '/icons/badge.png',
     data: { url: data.url || '/' },

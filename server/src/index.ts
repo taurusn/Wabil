@@ -130,8 +130,8 @@ app.post('/unsubscribe', async (c) => {
 app.post('/push/test', async (c) => {
   try {
     const sent = await sendPoke({
-      title: '',
-      body: 'this is a test poke. if you can read this, the channel works.',
+      title: 'this is a test poke. if you can read this, the channel works.',
+      body: '',
       url: '/digest',
     });
     return c.json({ ok: true, sent });

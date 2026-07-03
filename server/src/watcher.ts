@@ -151,7 +151,8 @@ export async function tick(): Promise<TickResult> {
           poke = { ...voiced, url: pokeUrl(), tag: `wabil-inbox-${m.id}` };
         } catch (e: any) {
           errors.push(`voice ${m.id}: ${e?.message || e}`);
-          poke = { title: '', body: d.summary || m.subject, url: pokeUrl(), tag: `wabil-inbox-${m.id}` };
+          // message-in-title: an empty title gets auto-filled with "wabil" by iOS
+          poke = { title: d.summary || m.subject, body: '', url: pokeUrl(), tag: `wabil-inbox-${m.id}` };
         }
         seen.put(m.id, {
           status: 'pending',
