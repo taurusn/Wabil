@@ -68,6 +68,16 @@ export function ChatScreen({ navigation }: Props) {
   const lastSendTs = useRef(0);
   const faceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const connRef = useRef<'connecting' | 'live' | 'down'>('connecting');
+  const faceRef = useRef<FaceState>('wake');
+  // sleepy = late night AND nothing happening for a while — never while Hatim
+  // is actively here. Any interaction resets the clock; if it was dozing, the
+  // eyes snap open (a brief wake) instead of just switching.
+  const SLEEPY_AFTER_MS = 120000;
+  const lastActiveTs = useRef(Date.now());
+  const bumpActivity = useCallback(() => {
+    lastActiveTs.current = Date.now();
+    if (faceRef.current === 'sleepy') faceCtl.current.wakeUntil = Date.now() + 900;
+  }, []);
 
   const recomputeFace = useCallback(() => {
     const c = faceCtl.current;
@@ -82,8 +92,10 @@ export function ChatScreen({ navigation }: Props) {
     else if (inputFocusedRef.current) f = 'listening';
     else {
       const h = new Date().getHours();
-      f = h >= 23 || h < 5 ? 'sleepy' : 'idle';
+      const night = h >= 23 || h < 5;
+      f = night && Date.now() - lastActiveTs.current > SLEEPY_AFTER_MS ? 'sleepy' : 'idle';
     }
+    faceRef.current = f;
     setFace(f);
     // wake ourselves exactly when the nearest timed window expires
     const next = [c.wakeUntil, c.alertUntil, c.revealUntil, c.affectUntil].filter((x) => x > now);
@@ -183,14 +195,16 @@ export function ChatScreen({ navigation }: Props) {
       if (e.type === 'working') {
         // the worker is digging: the face narrows its eyes until it reports back
         faceCtl.current.working = e.on;
+        bumpActivity();
         recomputeFace();
       }
       if (e.type === 'bubble') {
         // a bubble with no recent user message = a proactive poke: perk first
         if (Date.now() - lastSendTs.current > 90000 && queue.current.length === 0 && !draining.current) {
           faceCtl.current.alertUntil = Date.now() + 1100;
-          recomputeFace();
         }
+        bumpActivity();
+        recomputeFace();
         queue.current.push(e.message);
         drain();
       }
@@ -272,6 +286,8 @@ export function ChatScreen({ navigation }: Props) {
     if (sending.current) return;
     sending.current = true;
     lastSendTs.current = Date.now(); // replies to this are answers, not pokes
+    bumpActivity();
+    recomputeFace();
     pingPresence(true); // mark present now so the reply streams here, not a push
     const rTo = replyTo;
     setReplyTo(null);
@@ -402,6 +418,7 @@ export function ChatScreen({ navigation }: Props) {
             onFocus={() => {
               inputFocusedRef.current = true;
               setInputFocused(true);
+              bumpActivity();
               recomputeFace();
             }}
             onBlur={() => {
