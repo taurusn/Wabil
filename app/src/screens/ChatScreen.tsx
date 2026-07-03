@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Background } from '../components/Background';
@@ -64,7 +63,6 @@ export function ChatScreen({ navigation }: Props) {
     wakeUntil: Date.now() + 1500,
   });
   const inputFocusedRef = useRef(false);
-  const [inputFocused, setInputFocused] = useState(false);
   const lastSendTs = useRef(0);
   const faceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const connRef = useRef<'connecting' | 'live' | 'down'>('connecting');
@@ -121,12 +119,6 @@ export function ChatScreen({ navigation }: Props) {
     recomputeFace();
   }, [connState, recomputeFace]);
 
-  // hero band collapses while the keyboard is up: the face yields to the conversation
-  const heroH = useSharedValue(104);
-  useEffect(() => {
-    heroH.value = withTiming(inputFocused ? 0 : 104, { duration: 260 });
-  }, [inputFocused, heroH]);
-  const heroStyle = useAnimatedStyle(() => ({ height: heroH.value, opacity: heroH.value / 104 }));
 
   const clean = (list: ChatMsg[]) => list.map((m) => ({ ...m, content: sanitize(m.content) }));
   // History + paginated messages should appear instantly; only live-streamed
@@ -380,9 +372,11 @@ export function ChatScreen({ navigation }: Props) {
           </Text>
         </Pressable>
 
-        <Animated.View style={[styles.heroBand, heroStyle]}>
-          <Watcher size={92} state={face} />
-        </Animated.View>
+        {/* the creature lives BEHIND the conversation — the chat is a wall
+            between you. Recessed so the text always wins. */}
+        <View style={styles.behind} pointerEvents="none">
+          <Watcher size={210} state={face} />
+        </View>
 
         {!ready ? (
           <View style={styles.loadingWrap}>
@@ -417,13 +411,11 @@ export function ChatScreen({ navigation }: Props) {
             onSend={send}
             onFocus={() => {
               inputFocusedRef.current = true;
-              setInputFocused(true);
               bumpActivity();
               recomputeFace();
             }}
             onBlur={() => {
               inputFocusedRef.current = false;
-              setInputFocused(false);
               recomputeFace();
             }}
           />
@@ -436,7 +428,7 @@ export function ChatScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 26, paddingTop: 12, paddingBottom: 6 },
-  heroBand: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  behind: { position: 'absolute', top: '17%', left: 0, right: 0, alignItems: 'center', opacity: 0.55 },
   name: { fontFamily: font.medium, fontSize: 14, color: color.textSecondary },
   nameDim: { fontFamily: font.light, color: color.textMuted },
   list: { paddingHorizontal: 22, paddingVertical: 12, gap: space.gapChat },
