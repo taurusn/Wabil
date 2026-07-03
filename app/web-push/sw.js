@@ -7,13 +7,13 @@ self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch { data = { body: event.data && event.data.text() }; }
-  // never announce "wabil" — the app name and icon already say who it's from.
-  // if only a body arrives, promote it to the title (the bold line).
-  let title = data.title || '';
-  let body = data.body || '';
-  if (!title) { title = body || 'something new'; body = ''; }
+  // no custom title: iOS already stamps the app name on every notification,
+  // so the message rides as plain BODY text under it — like a real text.
+  // (a title is only used when the server explicitly sends one, e.g. a
+  // voiced inbox poke with a real content headline.)
+  const title = data.title || '';
   const options = {
-    body,
+    body: data.body || '',
     icon: '/icons/icon-192.png',
     badge: '/icons/badge.png',
     data: { url: data.url || '/' },

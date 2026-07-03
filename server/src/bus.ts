@@ -104,12 +104,12 @@ export function streamBubble(message: {
  */
 export function pushReplyOnce(id: string, text: string): void {
   if (appPresent()) return;
-  // the message IS the notification — no "wabil" header, the app name and
-  // icon already say who it's from.
+  // no title at all: iOS stamps the app name on the notification anyway, so
+  // the reply rides as plain body text under it — reads like a real text.
   const body = text.replace(/\s+/g, ' ').trim().slice(0, 140);
   sendPoke({
-    title: body || 'new message',
-    body: '',
+    title: '',
+    body: body || 'new message',
     url: `/?m=${id}`,
     tag: `wabil-chat-${id}`,
   }).catch(() => {
