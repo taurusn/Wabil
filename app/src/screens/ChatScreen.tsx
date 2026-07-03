@@ -85,7 +85,7 @@ export function ChatScreen({ navigation }: Props) {
     else if (now < c.wakeUntil) f = 'wake';
     else if (now < c.alertUntil) f = 'alert';
     else if (now < c.revealUntil) f = affectToFace(c.affect);
-    else if (now < c.affectUntil && c.affect !== 'neutral') f = affectToFace(c.affect);
+    else if (now < c.affectUntil) f = affectToFace(c.affect); // every reply performs, neutral = talking
     else if (c.working) f = 'thinking';
     else if (inputFocusedRef.current) f = 'listening';
     else {
@@ -150,8 +150,9 @@ export function ChatScreen({ navigation }: Props) {
       addMsg({ ...next, content: sanitize(next.content) });
       if (queue.current.length) await sleep(220); // a beat between texts
     }
-    // hold a non-neutral affect for a beat after the last bubble, then settle
-    if (c.affect !== 'neutral') c.affectUntil = Date.now() + 2200;
+    // keep performing for a beat after the last bubble, then settle. neutral
+    // holds as talking — a one-bubble reply was flashing by too fast to feel.
+    c.affectUntil = Date.now() + 2200;
     c.revealUntil = 0;
     recomputeFace();
     draining.current = false;

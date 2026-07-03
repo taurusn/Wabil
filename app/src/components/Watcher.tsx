@@ -280,29 +280,29 @@ export function Watcher({ size = 92, state }: { size?: number; state: FaceState 
 
       // write shared values (px values scaled to this mount's size)
       L.tx.value = (dx) * k;
-      L.ty.value = (dy - amp * 3) * k;
+      L.ty.value = (dy - amp * 4) * k;
       L.rot.value = rL;
-      L.sx.value = w + vibL * 0.02;
-      L.sy.value = Math.max(0.04, hL + vibL * 0.03);
+      L.sx.value = w + vibL * 0.03;
+      L.sy.value = Math.max(0.04, hL + vibL * 0.05);
       R.tx.value = dx * k;
-      R.ty.value = (dy - amp2 * 3) * k;
+      R.ty.value = (dy - amp2 * 4) * k;
       R.rot.value = rR;
-      R.sx.value = w + vibR * 0.02;
-      R.sy.value = Math.max(0.04, hR + vibR * 0.03);
+      R.sx.value = w + vibR * 0.03;
+      R.sy.value = Math.max(0.04, hR + vibR * 0.05);
 
       const clip = 1 - hp * 0.46; // happy/laugh crescent: flat cut from the bottom
       L.clip.value = clip;
       R.clip.value = clip;
 
-      const brL = br + vibL * 0.3;
-      const brR = br + vibR * 0.3;
+      const brL = br + vibL * 0.5;
+      const brR = br + vibR * 0.5;
       L.over.value = clamp((brL - 1) * 0.7, 0, 0.6);
       R.over.value = clamp((brR - 1) * 0.7, 0, 0.6);
       L.dim.value = clamp(brL, 0.35, 1);
       R.dim.value = clamp(brR, 0.35, 1);
 
-      haloOp.value = smooth('glow', st.glow, dt, 8) + Math.max(vibL, vibR) * 0.25;
-      haloScale.value = 1 + amp * 0.18;
+      haloOp.value = smooth('glow', st.glow, dt, 8) + Math.max(vibL, vibR) * 0.4;
+      haloScale.value = 1 + amp * 0.35;
 
       raf = requestAnimationFrame(tick);
     };
