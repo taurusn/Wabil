@@ -7,9 +7,13 @@ self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch { data = { body: event.data && event.data.text() }; }
-  const title = data.title || 'wabil';
+  // never announce "wabil" — the app name and icon already say who it's from.
+  // if only a body arrives, promote it to the title (the bold line).
+  let title = data.title || '';
+  let body = data.body || '';
+  if (!title) { title = body || 'something new'; body = ''; }
   const options = {
-    body: data.body || '',
+    body,
     icon: '/icons/icon-192.png',
     badge: '/icons/badge.png',
     data: { url: data.url || '/' },

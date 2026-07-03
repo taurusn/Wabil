@@ -39,7 +39,7 @@ export async function composePoke(f: PokeFacts): Promise<{ title: string; body: 
 
   const msg = await runTurn({ system: VOICE_PROMPT, messages: [{ role: 'user', content: task }] });
   const j = extractJson(sanitize(textOf(msg)));
-  const title = String(j.title || 'wabil').slice(0, 80);
+  const title = String(j.title || f.subject || 'something new').slice(0, 80);
   const body = String(j.body || f.summary || f.subject).slice(0, 220);
   return { title, body };
 }

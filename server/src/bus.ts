@@ -104,10 +104,12 @@ export function streamBubble(message: {
  */
 export function pushReplyOnce(id: string, text: string): void {
   if (appPresent()) return;
+  // the message IS the notification — no "wabil" header, the app name and
+  // icon already say who it's from.
   const body = text.replace(/\s+/g, ' ').trim().slice(0, 140);
   sendPoke({
-    title: 'wabil',
-    body: body || 'new message',
+    title: body || 'new message',
+    body: '',
     url: `/?m=${id}`,
     tag: `wabil-chat-${id}`,
   }).catch(() => {
