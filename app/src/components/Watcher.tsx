@@ -101,15 +101,26 @@ function Eye({ k, sv }: { k: number; sv: EyeSV }) {
           width: EYE_W * k,
           height: EYE_H * k,
           justifyContent: 'flex-start',
-          shadowColor: '#6BA8FF',
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.5,
-          shadowRadius: 14 * k,
         },
         outer,
       ]}
     >
-      <Animated.View style={[{ width: EYE_W * k, overflow: 'hidden', borderRadius: 15 * k }, clip]}>
+      {/* the glow rides the ROUNDED clipped shape — on the outer (un-rounded,
+          transparent) box it renders as a rectangular halo, the "container" look */}
+      <Animated.View
+        style={[
+          {
+            width: EYE_W * k,
+            overflow: 'hidden',
+            borderRadius: 15 * k,
+            shadowColor: '#6BA8FF',
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.5,
+            shadowRadius: 14 * k,
+          },
+          clip,
+        ]}
+      >
         <LinearGradient
           colors={['#E4F3FF', '#A6D2FF', '#5E9BE8']}
           locations={[0, 0.42, 1]}

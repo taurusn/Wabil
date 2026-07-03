@@ -428,7 +428,7 @@ export function ChatScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 26, paddingTop: 12, paddingBottom: 6 },
-  behind: { position: 'absolute', top: '17%', left: 0, right: 0, alignItems: 'center', opacity: 0.55 },
+  behind: { position: 'absolute', top: '31%', left: 0, right: 0, alignItems: 'center', opacity: 0.55 },
   name: { fontFamily: font.medium, fontSize: 14, color: color.textSecondary },
   nameDim: { fontFamily: font.light, color: color.textMuted },
   list: { paddingHorizontal: 22, paddingVertical: 12, gap: space.gapChat },
