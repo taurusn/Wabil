@@ -104,14 +104,12 @@ export function streamBubble(message: {
  */
 export function pushReplyOnce(id: string, text: string): void {
   if (appPresent()) return;
-  // iOS notification anatomy (tested on Hatim's phone, both ways): a forced
-  // "from wabil" subtitle on ALL web push, and an EMPTY title gets auto-filled
-  // with the app name — "wabil / from wabil / text". So the ONLY single-wabil
-  // layout is the message in the title slot with no body.
+  // Hatim's call: a fixed "new message" title (never "wabil" — iOS already
+  // attributes the app), with the reply as the body.
   const body = text.replace(/\s+/g, ' ').trim().slice(0, 140);
   sendPoke({
-    title: body || 'new message',
-    body: '',
+    title: 'new message',
+    body,
     url: `/?m=${id}`,
     tag: `wabil-chat-${id}`,
   }).catch(() => {
